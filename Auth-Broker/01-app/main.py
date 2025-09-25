@@ -174,5 +174,3 @@ async def access_token(request: Request, app_user_id: str = Query(..., descripti
     if not token:
         raise HTTPException(500, "WHOOP did not return an access token")
     return PlainTextResponse(token)
-
-# curl -H "Authorization: Bearer o31GbKX3JaUN-63kl9v73zMKBXr_rnz4Bc5idRzGaWE.EIzR9bsNEbCDR9x8M3AVRovFQ2kL0Mg7etit20a1gYY%" "https://api.prod.whoop.com/developer/v1/recovery?limit=1"
