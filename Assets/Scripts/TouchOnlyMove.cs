@@ -11,9 +11,6 @@ public class TouchOnlyMove : MonoBehaviour
     private NavMeshAgent agent;
     private Camera cam;
     private PlayerAttack playerAttack;
-    
-    // Add this to prevent double-triggering
-    private bool hasProcessedTouch = false;
 
     void Awake()
     {
@@ -39,19 +36,16 @@ public class TouchOnlyMove : MonoBehaviour
 
     private void HandleTouchInput()
     {
-        if (UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches.Count == 0) 
+        if (UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches.Count == 0)
         {
-            // Reset the flag when no touches are active
-            hasProcessedTouch = false;
             return;
         }
 
         var touch = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches[0];
-        
-        // Only process touch if it's in the Began phase and we haven't already processed this touch
-        if (touch.phase == UnityEngine.InputSystem.TouchPhase.Began && !hasProcessedTouch)
+
+        // Only process touch if it's in the Began phase
+        if (touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
         {
-            hasProcessedTouch = true; // Mark this touch as processed
             
             var ray = cam.ScreenPointToRay(touch.screenPosition);
             Debug.Log("Ray: " + ray);
@@ -71,13 +65,6 @@ public class TouchOnlyMove : MonoBehaviour
                     agent.SetDestination(hit.point);
                 }
             }
-        }
-        
-        // Reset flag when touch ends
-        if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended || 
-            touch.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
-        {
-            hasProcessedTouch = false;
         }
     }
 }
