@@ -1,52 +1,40 @@
 using UnityEngine;
-using UnityEngine.AI;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerAnimator : MonoBehaviour
 {
-    // Reference to the NavMeshAgent component
-    private NavMeshAgent agent;
-
-    // Reference to the Animator component
+    
+    private CharacterController characterController;
     private Animator animator;
 
-    // A multiplier for movement speed to make animations more dynamic
-    // This helps push the MoveSpeed parameter towards 1.0 during movement
     public float movementSpeedMultiplier = 2.0f;
+    public float maxSpeedFallback = 5.0f; // used if we cannot query a mover for max speed
 
     void Awake()
     {
-        // Get the NavMeshAgent component attached to this GameObject
-        agent = GetComponent<NavMeshAgent>();
-
-        // Get the Animator component from the child object
+        characterController = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
     }
 
     void Update()
     {
-        // Get the agent's desired velocity (intended movement direction)
-        Vector3 desiredVelocity = agent.desiredVelocity;
+        if (animator == null)
+            return;
 
-        // Calculate horizontal and vertical components from desired velocity
-        float horizontalInput = 0f;
-        float verticalInput = 0f;
+        // CharacterController doesn't expose velocity directly. Approximate using delta position.
+        // Since this runs in Update, use the difference since last frame.
+        // Unity provides CharacterController.velocity starting 2020+, use it if available.
+        Vector3 velocity = characterController != null ? characterController.velocity : Vector3.zero;
 
-        if (desiredVelocity != Vector3.zero)
-        {
-            // Normalize the desired velocity to get direction components
-            Vector3 normalizedDesired = desiredVelocity.normalized;
-            horizontalInput = normalizedDesired.x;
-            print("normalizedDesired.y: " + normalizedDesired.y);
-            print("normalizedDesired.x: " + normalizedDesired.x);
-            verticalInput = normalizedDesired.y; // CHANGED BY ME
-        }
+        // Map world velocity to local space to drive strafe/forward params
+        Vector3 localVel = transform.InverseTransformDirection(new Vector3(velocity.x, 0f, velocity.z));
+        float horizontalInput = Mathf.Clamp(localVel.x, -1f, 1f);
+        float verticalInput = Mathf.Clamp(localVel.z, -1f, 1f);
 
-        // Calculate the magnitude of the current velocity
-        // Apply multiplier to make movement animations more pronounced
-        float currentSpeed = agent.velocity.magnitude;
-        float speed = Mathf.Clamp01((currentSpeed / agent.speed) * movementSpeedMultiplier);
+        float maxSpeed = maxSpeedFallback;
+        float currentSpeed = new Vector2(velocity.x, velocity.z).magnitude;
+        float speed = Mathf.Clamp01((currentSpeed / Mathf.Max(0.0001f, maxSpeed)) * movementSpeedMultiplier);
 
-        // Pass all values to the Animator
         animator.SetFloat("Horizontal", horizontalInput);
         animator.SetFloat("Vertical", verticalInput);
         animator.SetFloat("Speed", speed);

@@ -48,9 +48,12 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.1.11f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets/Scripts/PlayerAttack.cs" />
+    <Compile Include="Assets/Scripts/TopDownMover.cs" />
+    <Compile Include="Assets/Scripts/PlayerActions.cs" />
     <Compile Include="Assets/Scripts/Health.cs" />
-    <Compile Include="Assets/Scripts/TouchOnlyMove.cs" />
+    <Compile Include="Assets/Scripts/UIDebugger.cs" />
+    <Compile Include="Assets/Scripts/ButtonTest.cs" />
+    <Compile Include="Assets/Scripts/GameUIHandler.cs" />
     <Compile Include="Assets/Scripts/PlayerAnimator.cs" />
     <Compile Include="Assets/Scripts/CameraFollow.cs" />
   </ItemGroup>
