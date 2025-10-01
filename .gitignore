@@ -286,6 +286,9 @@ lerna-debug.log*
 .pnpm-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.html
 
+*.csproj
+*.sln
+
 # Runtime data
 # =================================
 pids
