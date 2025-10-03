@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Scripts/Other/SpellEventProxy.cs" />
+    <Compile Include="Assets/Scripts/Other/WhoopClient.cs" />
     <Compile Include="Assets/Scripts/Combat/Projectile.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
     <Compile Include="Assets/Scripts/Core/CameraFollow.cs" />

@@ -79,6 +79,10 @@ resource "google_cloud_run_v2_service" "broker" {
 
   template {
     service_account = google_service_account.broker_sa.email
+    
+    scaling {
+      max_instance_count = 5
+    }
 
     containers {
       image = var.image_url
@@ -114,11 +118,15 @@ resource "google_cloud_run_v2_service" "broker" {
         name  = "FIRESTORE_COLLECTION"
         value = "whoop_links"
       }
+      env {
+        name  = "REDIRECT_URI"
+        value = "https://whoop-broker-949011922332.europe-west3.run.app/oauth/callback"
+      }
 
       resources {
         limits = {
-          cpu    = "1"
-          memory = "512Mi"
+          cpu    = "2000m"
+          memory = "1Gi"
         }
       }
       ports { container_port = 8080 }
