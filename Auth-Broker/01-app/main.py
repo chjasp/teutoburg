@@ -7,10 +7,9 @@ from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.responses import RedirectResponse, HTMLResponse, PlainTextResponse
 
 from google.cloud import firestore
-from google.cloud import secretmanager
-from google.api_core.exceptions import NotFound
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 app = FastAPI(title="WHOOP Token Broker (Firestore)")
@@ -18,7 +17,7 @@ app = FastAPI(title="WHOOP Token Broker (Firestore)")
 # ---- Config ----
 WHOOP_AUTH_URL  = os.getenv("WHOOP_AUTH_URL",  "https://api.prod.whoop.com/oauth/oauth2/auth")
 WHOOP_TOKEN_URL = os.getenv("WHOOP_TOKEN_URL", "https://api.prod.whoop.com/oauth/oauth2/token")
-WHOOP_SCOPES    = os.getenv("WHOOP_SCOPES",    "offline read:recovery read:cycles read:sleep read:workout")
+WHOOP_SCOPES    = os.getenv("WHOOP_SCOPES",    "offline read:recovery read:sleep read:workout")
 
 # Secrets provided via Secret Manager -> env (Cloud Run injects env from secrets)
 WHOOP_CLIENT_ID     = os.getenv("WHOOP_CLIENT_ID")
@@ -32,8 +31,9 @@ STATE_TTL_S  = 10 * 60
 db = firestore.Client()
 COLL = os.getenv("FIRESTORE_COLLECTION", "whoop_auth")  # documents keyed by app_user_id
 
-# Optional: Secret Manager client (only if you prefer fetching secrets at runtime)
-_sm = secretmanager.SecretManagerServiceClient()
+# Optional: override redirect URI (useful for local dev)
+REDIRECT_URI = os.getenv("REDIRECT_URI")  # e.g., "http://localhost:8080/oauth/callback"
+
 
 def _sign_state(app_user_id: str, nonce: str) -> str:
     if not BROKER_API_KEY:
@@ -70,7 +70,7 @@ def login(request: Request, app_user_id: str = Query(..., description="Your app'
     if not WHOOP_CLIENT_ID or not WHOOP_CLIENT_SECRET:
         raise HTTPException(500, "Server missing WHOOP_CLIENT_ID/WHOOP_CLIENT_SECRET")
 
-    redirect_uri = str(request.url_for("oauth_callback"))
+    redirect_uri = REDIRECT_URI or str(request.url_for("oauth_callback"))
     nonce = secrets.token_urlsafe(16)
     state = _sign_state(app_user_id, nonce)
 
@@ -116,7 +116,7 @@ async def oauth_callback(request: Request, code: str | None = None, state: str |
     # Verify state and extract app_user_id
     app_user_id = _verify_state(state)
 
-    redirect_uri = str(request.url_for("oauth_callback"))
+    redirect_uri = REDIRECT_URI or str(request.url_for("oauth_callback"))
     async with httpx.AsyncClient(timeout=30) as client:
         data = {
             "grant_type": "authorization_code",
