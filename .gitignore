@@ -290,6 +290,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.html
 *.sln
 test.sh
 
+09-tests/
+
 # Runtime data
 # =================================
 pids
