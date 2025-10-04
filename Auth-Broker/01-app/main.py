@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request, HTTPException, Query
 from fastapi.responses import RedirectResponse, HTMLResponse, PlainTextResponse
 
 from google.cloud import firestore
+from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 
@@ -26,6 +27,7 @@ app = FastAPI(title="WHOOP Token Broker (Firestore)")
 WHOOP_AUTH_URL  = os.getenv("WHOOP_AUTH_URL",  "https://api.prod.whoop.com/oauth/oauth2/auth")
 WHOOP_TOKEN_URL = os.getenv("WHOOP_TOKEN_URL", "https://api.prod.whoop.com/oauth/oauth2/token")
 WHOOP_SCOPES    = os.getenv("WHOOP_SCOPES",    "offline read:recovery read:sleep read:workout")
+WHOOP_API_BASE  = os.getenv("WHOOP_API_BASE",  "https://api.prod.whoop.com")
 
 # Secrets provided via Secret Manager -> env (Cloud Run injects env from secrets)
 WHOOP_CLIENT_ID     = os.getenv("WHOOP_CLIENT_ID")
