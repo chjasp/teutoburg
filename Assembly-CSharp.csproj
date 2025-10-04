@@ -50,13 +50,22 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/Other/SpellEventProxy.cs" />
     <Compile Include="Assets/Scripts/Other/WhoopClient.cs" />
+    <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
     <Compile Include="Assets/Scripts/Combat/Projectile.cs" />
+    <Compile Include="Assets/Scripts/Combat/AllyAI.cs" />
+    <Compile Include="Assets/Scripts/Combat/Lifetime.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
     <Compile Include="Assets/Scripts/Core/CameraFollow.cs" />
+    <Compile Include="Assets/Scripts/Combat/SummonEventProxy.cs" />
+    <Compile Include="Assets/Scripts/Combat/PlayerSummoner.cs" />
     <Compile Include="Assets/Scripts/Combat/PlayerActions.cs" />
+    <Compile Include="Assets/Scripts/Combat/MeleeEventProxy.cs" />
     <Compile Include="Assets/Scripts/Combat/DamageText.cs" />
-    <Compile Include="Assets/Scripts/Core/PlayerAnimator.cs" />
+    <Compile Include="Assets/Scripts/Combat/PlayerHealth.cs" />
+    <Compile Include="Assets/Scripts/Combat/EnemyAI.cs" />
     <Compile Include="Assets/Scripts/Combat/SpellCaster.cs" />
+    <Compile Include="Assets/Scripts/Combat/IDamageable.cs" />
+    <Compile Include="Assets/Scripts/Combat/EnemyHealth.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
