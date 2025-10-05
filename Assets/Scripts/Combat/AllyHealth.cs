@@ -2,21 +2,20 @@ using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class EnemyHealth : MonoBehaviour, IDamageable
+public class AllyHealth : MonoBehaviour, IDamageable
 {
-    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int maxHealth = 80;
     [SerializeField] private GameObject deathVfxPrefab;
     [SerializeField] private string deathTriggerName = "Death";
     [SerializeField] private Animator animator;
 
     private int currentHealth;
     private bool isDead;
-	private bool hasReportedDeath;
     public bool IsDead => isDead;
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
 
-    public event Action<int, int> OnHealthChanged; // (current, max)
+    public event Action<int, int> OnHealthChanged;
     public event Action OnDied;
 
     void Awake()
@@ -50,12 +49,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             Instantiate(deathVfxPrefab, transform.position, Quaternion.identity);
         }
 
-        var ai = GetComponent<EnemyAI>();
+        var ai = GetComponent<AllyAI>();
         if (ai != null) ai.enabled = false;
         var controller = GetComponent<CharacterController>();
         if (controller != null) controller.enabled = false;
 
-		ReportDeath();
+        OnDied?.Invoke();
 
         if (animator != null && !string.IsNullOrEmpty(deathTriggerName))
         {
@@ -63,15 +62,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             return;
         }
 
-		Destroy(gameObject);
+        Destroy(gameObject);
     }
-
-	private void ReportDeath()
-	{
-		if (hasReportedDeath) return;
-		hasReportedDeath = true;
-		OnDied?.Invoke();
-	}
 
     public void FinalizeDeath()
     {
