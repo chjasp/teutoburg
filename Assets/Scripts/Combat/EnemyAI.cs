@@ -17,6 +17,8 @@ public class EnemyAI : MonoBehaviour
     [Header("Targeting")]
     [SerializeField] private Transform player; // auto-find by tag if not set
     [SerializeField] private string playerTag = "Player";
+    [SerializeField] private string allyTag = "Ally"; // Legionaries / allies to consider as targets
+    [SerializeField] private float rescanInterval = 0.5f;
 
     [Header("Animation & Casting (optional)")]
     [SerializeField] private string castTriggerName = "CastSpell";
@@ -28,6 +30,8 @@ public class EnemyAI : MonoBehaviour
     private float gravityVelocityY;
     private float attackTimer;
     private Transform lastAttackTarget;
+    private Transform currentTarget;
+    private float scanTimer;
 
     void Awake()
     {
@@ -50,31 +54,47 @@ public class EnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (player == null) return;
-
-        // Skip if target is dead
-        var playerHealth = player.GetComponentInParent<PlayerHealth>();
-        if (playerHealth != null && playerHealth.IsDead)
+        // Regularly reacquire best target between Player and Allies
+        scanTimer += Time.deltaTime;
+        if (currentTarget == null || scanTimer >= rescanInterval)
         {
+            scanTimer = 0f;
+            AcquireTarget();
+        }
+
+        if (currentTarget == null)
+        {
+            // Idle gravity only
+            gravityVelocityY += Physics.gravity.y * Time.deltaTime;
+            controller.Move(new Vector3(0f, gravityVelocityY, 0f) * Time.deltaTime);
+            if ((controller.collisionFlags & CollisionFlags.Below) != 0 && gravityVelocityY < 0f)
+                gravityVelocityY = -0.5f;
             return;
         }
 
-        Vector3 toPlayer = player.position - transform.position;
-        toPlayer.y = 0f;
-        float distance = toPlayer.magnitude;
-
-        // Face the player
-        if (toPlayer.sqrMagnitude > 0.0001f)
+        // If target is dead, clear and rescan next frame
+        if (IsTargetDead(currentTarget))
         {
-            Quaternion face = Quaternion.LookRotation(toPlayer.normalized);
+            currentTarget = null;
+            return;
+        }
+
+        Vector3 toTarget = currentTarget.position - transform.position;
+        toTarget.y = 0f;
+        float distance = toTarget.magnitude;
+
+        // Face the target
+        if (toTarget.sqrMagnitude > 0.0001f)
+        {
+            Quaternion face = Quaternion.LookRotation(toTarget.normalized);
             transform.rotation = Quaternion.Slerp(transform.rotation, face, turnSpeed * Time.deltaTime);
         }
 
-        // Move toward the player until within stopping distance
+        // Move toward the target until within stopping distance
         Vector3 horizontalMove = Vector3.zero;
         if (distance > stoppingDistance)
         {
-            horizontalMove = toPlayer.normalized * moveSpeed;
+            horizontalMove = toTarget.normalized * moveSpeed;
         }
 
         // Gravity for CharacterController
@@ -97,7 +117,7 @@ public class EnemyAI : MonoBehaviour
 
     private void PerformAttack()
     {
-        if (player == null) return;
+        if (currentTarget == null) return;
 
         // If we have a SpellCaster and an Animator, trigger the cast animation.
         if (spellCaster != null && animator != null && !string.IsNullOrEmpty(castTriggerName))
@@ -110,13 +130,13 @@ public class EnemyAI : MonoBehaviour
         // Melee path: trigger melee animation and defer damage to animation event
         if (animator != null && !string.IsNullOrEmpty(meleeTriggerName))
         {
-            lastAttackTarget = player;
+            lastAttackTarget = currentTarget;
             animator.SetTrigger(meleeTriggerName);
             return;
         }
 
         // Fallback: apply direct damage without animation
-        var damageable = player.GetComponentInParent<IDamageable>();
+        var damageable = currentTarget.GetComponentInParent<IDamageable>();
         if (damageable != null)
         {
             damageable.TakeDamage(attackDamage);
@@ -126,7 +146,7 @@ public class EnemyAI : MonoBehaviour
     // Called by MeleeEventProxy from an Animation Event at the strike frame
     public void OnMeleeStrikeEvent()
     {
-        var target = lastAttackTarget != null ? lastAttackTarget : (player != null ? player : null);
+        var target = lastAttackTarget != null ? lastAttackTarget : (currentTarget != null ? currentTarget : null);
         if (target == null) return;
 
         Vector3 toTarget = target.position - transform.position;
@@ -138,6 +158,68 @@ public class EnemyAI : MonoBehaviour
         {
             damageable.TakeDamage(attackDamage);
         }
+    }
+
+    private void AcquireTarget()
+    {
+        float bestDist = float.MaxValue;
+        Transform best = null;
+        Vector3 myPos = transform.position;
+
+        // Consider Player
+        if (player == null)
+        {
+            var playerGo = GameObject.FindGameObjectWithTag(playerTag);
+            if (playerGo != null) player = playerGo.transform;
+        }
+        if (player != null && !IsTargetDead(player))
+        {
+            float d = Vector3.Distance(myPos, player.position);
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = player;
+            }
+        }
+
+        // Consider Allies (Legionaries)
+        GameObject[] allies = null;
+        try
+        {
+            allies = GameObject.FindGameObjectsWithTag(allyTag);
+        }
+        catch
+        {
+            allies = null;
+        }
+
+        if (allies != null)
+        {
+            foreach (var a in allies)
+            {
+                if (a == null) continue;
+                var t = a.transform;
+                if (IsTargetDead(t)) continue;
+                float d = Vector3.Distance(myPos, t.position);
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = t;
+                }
+            }
+        }
+
+        currentTarget = best;
+    }
+
+    private bool IsTargetDead(Transform t)
+    {
+        if (t == null) return true;
+        var ph = t.GetComponentInParent<PlayerHealth>();
+        if (ph != null) return ph.IsDead;
+        var ah = t.GetComponentInParent<AllyHealth>();
+        if (ah != null) return ah.IsDead;
+        return false;
     }
 }
 

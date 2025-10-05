@@ -54,11 +54,13 @@
     <Compile Include="Assets/Scripts/Combat/WorldSpaceHealthBarUI.cs" />
     <Compile Include="Assets/Scripts/Combat/Projectile.cs" />
     <Compile Include="Assets/Scripts/Combat/AllyAI.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/EnemySpawnPoint.cs" />
     <Compile Include="Assets/Scripts/Combat/Lifetime.cs" />
     <Compile Include="Assets/Scripts/Combat/HealthBarUI.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
     <Compile Include="Assets/Scripts/Core/CameraFollow.cs" />
     <Compile Include="Assets/Scripts/Combat/SummonEventProxy.cs" />
+    <Compile Include="Assets/Scripts/Combat/AllyHealth.cs" />
     <Compile Include="Assets/Scripts/Combat/PlayerSummoner.cs" />
     <Compile Include="Assets/Scripts/Combat/PlayerActions.cs" />
     <Compile Include="Assets/Scripts/Combat/MeleeEventProxy.cs" />
@@ -67,6 +69,7 @@
     <Compile Include="Assets/Scripts/Combat/EnemyAI.cs" />
     <Compile Include="Assets/Scripts/Combat/SpellCaster.cs" />
     <Compile Include="Assets/Scripts/Combat/IDamageable.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/WaveManager.cs" />
     <Compile Include="Assets/Scripts/Combat/PlayerMelee.cs" />
     <Compile Include="Assets/Scripts/Combat/EnemyHealth.cs" />
   </ItemGroup>
