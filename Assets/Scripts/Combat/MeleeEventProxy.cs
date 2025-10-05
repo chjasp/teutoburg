@@ -4,6 +4,7 @@ public class MeleeEventProxy : MonoBehaviour
 {
     [SerializeField] private EnemyAI enemyAI;
     [SerializeField] private AllyAI allyAI;
+    [SerializeField] private PlayerMelee playerMelee;
 
     // Called by an Animation Event at the strike frame of the melee animation
     public void OnMeleeStrike()
@@ -19,6 +20,13 @@ public class MeleeEventProxy : MonoBehaviour
         if (allyAI != null)
         {
             allyAI.OnMeleeStrikeEvent();
+            return;
+        }
+
+        if (playerMelee == null) playerMelee = GetComponentInParent<PlayerMelee>();
+        if (playerMelee != null)
+        {
+            playerMelee.OnMeleeStrikeEvent();
             return;
         }
     }

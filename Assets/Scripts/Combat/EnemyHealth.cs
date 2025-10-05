@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -11,6 +12,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private int currentHealth;
     private bool isDead;
     public bool IsDead => isDead;
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
+
+    public event Action<int, int> OnHealthChanged; // (current, max)
+    public event Action OnDied;
 
     void Awake()
     {
@@ -19,12 +25,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             animator = GetComponentInChildren<Animator>();
         }
         currentHealth = Mathf.Max(1, maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     public void TakeDamage(int amount)
     {
         if (isDead) return;
         currentHealth = Mathf.Max(0, currentHealth - Mathf.Max(0, amount));
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
         if (currentHealth <= 0)
         {
             Die();
@@ -52,6 +60,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             return;
         }
 
+        OnDied?.Invoke();
         Destroy(gameObject);
     }
 
