@@ -49,6 +49,7 @@ public class Projectile : MonoBehaviour
         // Existing: explode + show damage on enemies
         if (other.CompareTag(explodeOnTag))
         {
+            ApplyDamage(other);
             ShowDamage(other);
             Explode();
             return;
@@ -62,6 +63,15 @@ public class Projectile : MonoBehaviour
         }
     }
 
+
+    private void ApplyDamage(Collider enemy)
+    {
+        var damageable = enemy.GetComponentInParent<IDamageable>();
+        if (damageable != null)
+        {
+            damageable.TakeDamage(damage);
+        }
+    }
 
     private void ShowDamage(Collider enemy)
     {
