@@ -1,3 +1,4 @@
+using Teutoburg.Combat;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -35,7 +36,6 @@ public class AllyAI : MonoBehaviour
 
     void Update()
     {
-        // Regularly reacquire target
         scanTimer += Time.deltaTime;
         if (currentTarget == null || scanTimer >= rescanInterval)
         {
@@ -45,7 +45,6 @@ public class AllyAI : MonoBehaviour
 
         if (currentTarget == null)
         {
-            // Idle gravity only
             gravityVelocityY += Physics.gravity.y * Time.deltaTime;
             controller.Move(new Vector3(0f, gravityVelocityY, 0f) * Time.deltaTime);
             if ((controller.collisionFlags & CollisionFlags.Below) != 0 && gravityVelocityY < 0f)
@@ -53,7 +52,6 @@ public class AllyAI : MonoBehaviour
             return;
         }
 
-        // If target is dead, clear and rescan next frame
         var enemyHealth = currentTarget.GetComponentInParent<EnemyHealth>();
         if (enemyHealth != null && enemyHealth.IsDead)
         {
@@ -65,21 +63,18 @@ public class AllyAI : MonoBehaviour
         toTarget.y = 0f;
         float distance = toTarget.magnitude;
 
-        // Face target
         if (toTarget.sqrMagnitude > 0.0001f)
         {
             Quaternion face = Quaternion.LookRotation(toTarget.normalized);
             transform.rotation = Quaternion.Slerp(transform.rotation, face, turnSpeed * Time.deltaTime);
         }
 
-        // Move toward target until within stopping distance
         Vector3 horizontalMove = Vector3.zero;
         if (distance > stoppingDistance)
         {
             horizontalMove = toTarget.normalized * moveSpeed;
         }
 
-        // Apply CharacterController motion with gravity
         gravityVelocityY += Physics.gravity.y * Time.deltaTime;
         Vector3 motion = new Vector3(horizontalMove.x, gravityVelocityY, horizontalMove.z) * Time.deltaTime;
         var flags = controller.Move(motion);
@@ -88,7 +83,6 @@ public class AllyAI : MonoBehaviour
             gravityVelocityY = -0.5f;
         }
 
-        // Attack if in range and timer ready
         attackTimer += Time.deltaTime;
         if (distance <= attackRange && attackTimer >= attackInterval)
         {
@@ -99,37 +93,26 @@ public class AllyAI : MonoBehaviour
 
     private void AcquireTarget()
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
-        float bestDist = float.MaxValue;
-        Transform best = null;
-        Vector3 myPos = transform.position;
-        foreach (var e in enemies)
-        {
-            if (e == null) continue;
-            var eh = e.GetComponentInParent<EnemyHealth>();
-            if (eh != null && eh.IsDead) continue;
-            float d = Vector3.Distance(myPos, e.transform.position);
-            if (d <= detectionRadius && d < bestDist)
-            {
-                bestDist = d;
-                best = e.transform;
-            }
-        }
-        currentTarget = best;
+        float distance;
+        currentTarget = CombatTargetingUtility.FindClosestTarget(enemyTag, transform.position, detectionRadius, IsEnemyDead, out distance);
+    }
+
+    private bool IsEnemyDead(Transform candidate)
+    {
+        var eh = candidate.GetComponentInParent<EnemyHealth>();
+        return eh != null && eh.IsDead;
     }
 
     private void PerformAttack()
     {
         if (currentTarget == null) return;
 
-        // Prefer animation-driven melee
         if (animator != null && !string.IsNullOrEmpty(meleeTriggerName))
         {
             animator.SetTrigger(meleeTriggerName);
             return;
         }
 
-        // Fallback direct damage
         var damageable = currentTarget.GetComponentInParent<IDamageable>();
         if (damageable != null)
         {
@@ -150,11 +133,6 @@ public class AllyAI : MonoBehaviour
         if (toTarget.magnitude > attackRange + 0.25f) return;
 
         var damageable = currentTarget.GetComponentInParent<IDamageable>();
-        if (damageable != null)
-        {
-            damageable.TakeDamage(attackDamage);
-        }
+        damageable?.TakeDamage(attackDamage);
     }
 }
-
-

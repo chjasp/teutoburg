@@ -1,7 +1,8 @@
+using Teutoburg.Combat;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class PlayerMelee : MonoBehaviour
+public class PlayerMelee : AnimationDrivenAbility
 {
     [Header("Targeting")]
     [SerializeField] private string enemyTag = "Enemy";
@@ -11,33 +12,49 @@ public class PlayerMelee : MonoBehaviour
     [Header("Damage")]
     [SerializeField] private int damage = 25;
 
-    [Header("Animation")]
-    [SerializeField] private string meleeTriggerName = "Melee";
-    [SerializeField] private Animator animator; // auto-find in children
-
     private Transform lastTarget;
 
-    void Awake()
+    protected override void Awake()
     {
-        if (animator == null)
+        base.Awake();
+        EnsureTriggerName("Melee");
+    }
+
+    protected override void Prepare()
+    {
+        lastTarget = FindBestTarget();
+    }
+
+    protected override void Execute()
+    {
+        Transform target = lastTarget != null ? lastTarget : FindBestTarget();
+        lastTarget = null;
+
+        if (target == null)
         {
-            animator = GetComponentInChildren<Animator>();
+            return;
         }
+
+        Vector3 to = target.position - transform.position;
+        to.y = 0f;
+        if (to.magnitude > maxStrikeDistance + 0.25f)
+        {
+            return;
+        }
+
+        var damageable = target.GetComponentInParent<IDamageable>();
+        damageable?.TakeDamage(damage);
     }
 
     public void TriggerMelee()
     {
-        // pick a target now to reduce pop during windup; still re-check at strike
-        lastTarget = FindBestTarget();
-        if (animator != null && !string.IsNullOrEmpty(meleeTriggerName))
-        {
-            animator.SetTrigger(meleeTriggerName);
-        }
-        else
-        {
-            // fallback: apply instantly
-            ApplyStrike();
-        }
+        Perform();
+    }
+
+    // Called by MeleeEventProxy via Animation Event at strike frame
+    public void OnMeleeStrikeEvent()
+    {
+        ExecuteFromAnimationEvent();
     }
 
     private Transform FindBestTarget()
@@ -48,15 +65,28 @@ public class PlayerMelee : MonoBehaviour
         float bestDist = maxStrikeDistance;
         Vector3 origin = transform.position;
         Vector3 fwd = transform.forward;
+
         foreach (var e in enemies)
         {
-            if (e == null) continue;
+            if (e == null)
+            {
+                continue;
+            }
+
             var eh = e.GetComponentInParent<EnemyHealth>();
-            if (eh != null && eh.IsDead) continue;
+            if (eh != null && eh.IsDead)
+            {
+                continue;
+            }
+
             Vector3 to = e.transform.position - origin;
             to.y = 0f;
             float dist = to.magnitude;
-            if (dist > maxStrikeDistance) continue;
+            if (dist > maxStrikeDistance)
+            {
+                continue;
+            }
+
             float angle = Vector3.Angle(fwd, to);
             if (angle <= bestAngle && dist <= bestDist)
             {
@@ -65,30 +95,7 @@ public class PlayerMelee : MonoBehaviour
                 bestDist = dist;
             }
         }
+
         return best;
     }
-
-    // Called by MeleeEventProxy via Animation Event at strike frame
-    public void OnMeleeStrikeEvent()
-    {
-        ApplyStrike();
-    }
-
-    private void ApplyStrike()
-    {
-        Transform target = lastTarget != null ? lastTarget : FindBestTarget();
-        if (target == null) return;
-
-        Vector3 to = target.position - transform.position;
-        to.y = 0f;
-        if (to.magnitude > maxStrikeDistance + 0.25f) return;
-
-        var damageable = target.GetComponentInParent<IDamageable>();
-        if (damageable != null)
-        {
-            damageable.TakeDamage(damage);
-        }
-    }
 }
-
-

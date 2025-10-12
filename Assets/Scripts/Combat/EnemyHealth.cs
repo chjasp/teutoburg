@@ -1,83 +1,28 @@
-using System;
+using Teutoburg.Combat;
 using UnityEngine;
 
-[DisallowMultipleComponent]
-public class EnemyHealth : MonoBehaviour, IDamageable
+public class EnemyHealth : NpcHealth
 {
-    [SerializeField] private int maxHealth = 100;
-    [SerializeField] private GameObject deathVfxPrefab;
-    [SerializeField] private string deathTriggerName = "Death";
-    [SerializeField] private Animator animator;
+    [SerializeField] private EnemyAI enemyAI;
+    [SerializeField] private CharacterController characterController;
 
-    private int currentHealth;
-    private bool isDead;
-	private bool hasReportedDeath;
-    public bool IsDead => isDead;
-    public int CurrentHealth => currentHealth;
-    public int MaxHealth => maxHealth;
-
-    public event Action<int, int> OnHealthChanged; // (current, max)
-    public event Action OnDied;
-
-    void Awake()
+    protected override void Awake()
     {
-        if (animator == null)
+        if (enemyAI == null)
         {
-            animator = GetComponentInChildren<Animator>();
+            enemyAI = GetComponent<EnemyAI>();
         }
-        currentHealth = Mathf.Max(1, maxHealth);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        if (characterController == null)
+        {
+            characterController = GetComponent<CharacterController>();
+        }
+
+        base.Awake();
     }
 
-    public void TakeDamage(int amount)
+    protected override void OnBeforeDeath()
     {
-        if (isDead) return;
-        currentHealth = Mathf.Max(0, currentHealth - Mathf.Max(0, amount));
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
-    }
-
-    private void Die()
-    {
-        if (isDead) return;
-        isDead = true;
-
-        if (deathVfxPrefab != null)
-        {
-            Instantiate(deathVfxPrefab, transform.position, Quaternion.identity);
-        }
-
-        var ai = GetComponent<EnemyAI>();
-        if (ai != null) ai.enabled = false;
-        var controller = GetComponent<CharacterController>();
-        if (controller != null) controller.enabled = false;
-
-		ReportDeath();
-
-        if (animator != null && !string.IsNullOrEmpty(deathTriggerName))
-        {
-            animator.SetTrigger(deathTriggerName);
-            return;
-        }
-
-		Destroy(gameObject);
-    }
-
-	private void ReportDeath()
-	{
-		if (hasReportedDeath) return;
-		hasReportedDeath = true;
-		OnDied?.Invoke();
-	}
-
-    public void FinalizeDeath()
-    {
-        if (!gameObject) return;
-        Destroy(gameObject);
+        if (enemyAI != null) enemyAI.enabled = false;
+        if (characterController != null) characterController.enabled = false;
     }
 }
-
-
