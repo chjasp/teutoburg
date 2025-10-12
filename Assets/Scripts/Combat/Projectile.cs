@@ -29,6 +29,11 @@ public class Projectile : MonoBehaviour
         transform.forward = direction; // orient the visual
     }
 
+    public void SetDamage(int value)
+    {
+        damage = Mathf.Max(0, value);
+    }
+
     void Update()
     {
         // Move forward
