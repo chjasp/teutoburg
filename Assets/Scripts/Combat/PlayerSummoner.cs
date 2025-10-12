@@ -1,7 +1,8 @@
+using Teutoburg.Combat;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class PlayerSummoner : MonoBehaviour
+public class PlayerSummoner : AnimationDrivenAbility
 {
     [Header("Summon Setup")]
     [SerializeField] private GameObject legionaryPrefab;
@@ -12,7 +13,26 @@ public class PlayerSummoner : MonoBehaviour
     [Header("Lifetime (optional)")]
     [SerializeField] private float legionaryLifetime = 20f; // 0 = infinite
 
+    protected override void Awake()
+    {
+        base.Awake();
+        EnsureTriggerName("Summon");
+    }
+
+    public void RequestSummon()
+    {
+        Perform();
+    }
+
+    /// <summary>
+    /// Called by an Animation Event via <see cref="SummonEventProxy"/>.
+    /// </summary>
     public void SummonLegionaries()
+    {
+        ExecuteFromAnimationEvent();
+    }
+
+    protected override void Execute()
     {
         if (legionaryPrefab == null)
         {
@@ -30,7 +50,7 @@ public class PlayerSummoner : MonoBehaviour
             Vector3 spawnPos = origin.position + offset;
             Quaternion rot = Quaternion.LookRotation((origin.forward + offset.normalized).normalized);
 
-            var go = Object.Instantiate(legionaryPrefab, spawnPos, rot);
+            var go = Instantiate(legionaryPrefab, spawnPos, rot);
             if (legionaryLifetime > 0f)
             {
                 var lifetime = go.GetComponent<Lifetime>();
@@ -40,5 +60,3 @@ public class PlayerSummoner : MonoBehaviour
         }
     }
 }
-
-

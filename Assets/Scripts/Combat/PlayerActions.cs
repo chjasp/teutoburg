@@ -1,51 +1,36 @@
 using UnityEngine;
 
+/// <summary>
+/// High level entry point for UI buttons or input bindings to trigger the player's abilities.
+/// The component simply forwards calls to the specialised ability components which now manage
+/// their own animation and fallback behaviour.
+/// </summary>
+[DisallowMultipleComponent]
 public class PlayerActions : MonoBehaviour
 {
-    private Animator animator;
-    private PlayerSummoner summoner;
-    private PlayerMelee melee;
+    [SerializeField] private SpellCaster spellCaster;
+    [SerializeField] private PlayerSummoner summoner;
+    [SerializeField] private PlayerMelee melee;
 
-    void Start()
+    private void Awake()
     {
-        // Get the Animator component attached to this GameObject
-        animator = GetComponentInChildren<Animator>();
-        Debug.Log("animator: " + animator);
-        summoner = GetComponent<PlayerSummoner>();
-        melee = GetComponent<PlayerMelee>();
+        if (spellCaster == null) spellCaster = GetComponent<SpellCaster>();
+        if (summoner == null) summoner = GetComponent<PlayerSummoner>();
+        if (melee == null) melee = GetComponent<PlayerMelee>();
     }
 
     public void CastSpell()
     {
-        // Set the "CastSpell" trigger in the Animator
-        Debug.Log("CastSpell");
-        animator.SetTrigger("CastSpell");
+        spellCaster?.RequestCast();
     }
 
     public void SummonLegionary()
     {
-        Debug.Log("SummonLegionary");
-        if (animator != null)
-        {
-            animator.SetTrigger("Summon");
-        }
-        else if (summoner != null)
-        {
-            // Fallback: summon immediately if no animator
-            summoner.SummonLegionaries();
-        }
+        summoner?.RequestSummon();
     }
 
     public void Melee()
     {
-        Debug.Log("Melee");
-        if (animator != null)
-        {
-            animator.SetTrigger("Melee");
-        }
-        else if (melee != null)
-        {
-            melee.TriggerMelee();
-        }
+        melee?.TriggerMelee();
     }
 }
