@@ -1,5 +1,6 @@
 // SpellCaster.cs
 using UnityEngine;
+using Teutoburg.Health;
 
 public class SpellCaster : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class SpellCaster : MonoBehaviour
     [Header("Tuning")]
     [SerializeField] private float projectileSpeed = 12f;
     [SerializeField] private float spawnForwardOffset = 0.12f; // in front of the hand
+    [SerializeField] private int baseDamage = 50;               // baseline damage when no steps
+    [SerializeField] private float stepsToDamageFactor = 0.01f; // e.g., 10k steps => +100 damage
 
     // Called by Animation Event
     public void SpawnProjectile()
@@ -42,6 +45,29 @@ public class SpellCaster : MonoBehaviour
         if (p != null)
         {
             p.Init(dir, projectileSpeed);
+            p.SetDamage(CalculateDamageFromSteps());
         }
+    }
+
+    private int CalculateDamageFromSteps()
+    {
+        // Ensure a request is in-flight at least once per app session
+        if (HKStepsBridge.YesterdaySteps < 0)
+        {
+            HKStepsBridge.RequestYesterdaySteps();
+        }
+
+        long steps = HKStepsBridge.YesterdaySteps;
+        if (steps < 0)
+        {
+            // Not yet available or failed; return baseline
+            return baseDamage;
+        }
+
+        // Linear scaling: base + factor * steps
+        float scaled = baseDamage + (float)steps * stepsToDamageFactor;
+        // Clamp to a reasonable range to avoid absurd values
+        int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
+        return finalDamage;
     }
 }

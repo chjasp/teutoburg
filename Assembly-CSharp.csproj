@@ -48,6 +48,7 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.1.11f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Scripts/Health/HKStepsBridge.cs" />
     <Compile Include="Assets/Scripts/Other/SpellEventProxy.cs" />
     <Compile Include="Assets/Scripts/Other/WhoopClient.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
