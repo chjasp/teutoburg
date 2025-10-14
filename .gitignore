@@ -16,6 +16,7 @@ Packages/packages-lock.json.meta
 # Unity asset files that should not be tracked
 *.unitypackage
 *.asset.meta
+*.meta
 
 # Unity editor settings
 UserSettings/

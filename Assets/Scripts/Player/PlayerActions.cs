@@ -3,7 +3,6 @@ using UnityEngine;
 public class PlayerActions : MonoBehaviour
 {
     private Animator animator;
-    private PlayerSummoner summoner;
     private PlayerMelee melee;
 
     void Start()
@@ -11,7 +10,6 @@ public class PlayerActions : MonoBehaviour
         // Get the Animator component attached to this GameObject
         animator = GetComponentInChildren<Animator>();
         Debug.Log("animator: " + animator);
-        summoner = GetComponent<PlayerSummoner>();
         melee = GetComponent<PlayerMelee>();
     }
 
@@ -22,19 +20,7 @@ public class PlayerActions : MonoBehaviour
         animator.SetTrigger("CastSpell");
     }
 
-    public void SummonLegionary()
-    {
-        Debug.Log("SummonLegionary");
-        if (animator != null)
-        {
-            animator.SetTrigger("Summon");
-        }
-        else if (summoner != null)
-        {
-            // Fallback: summon immediately if no animator
-            summoner.SummonLegionaries();
-        }
-    }
+    // Summon functionality removed
 
     public void Melee()
     {

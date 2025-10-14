@@ -12,7 +12,6 @@ public class WorldSpaceHealthBarUI : MonoBehaviour
     [Header("Health Sources (assign one)")]
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private EnemyHealth enemyHealth;
-	[SerializeField] private AllyHealth allyHealth;
 
     [Header("Billboarding")]
     [SerializeField] private bool faceCamera = true;
@@ -27,7 +26,6 @@ public class WorldSpaceHealthBarUI : MonoBehaviour
 		// Try to auto-wire a nearby health component if none assigned
         if (playerHealth == null) playerHealth = GetComponentInParent<PlayerHealth>();
         if (enemyHealth == null) enemyHealth = GetComponentInParent<EnemyHealth>();
-		if (allyHealth == null) allyHealth = GetComponentInParent<AllyHealth>();
         if (target == null)
         {
             // Prefer animator root or parent transform
@@ -66,12 +64,6 @@ public class WorldSpaceHealthBarUI : MonoBehaviour
             enemyHealth.OnDied += HandleDied;
             InitializeFromCurrentHealth(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
         }
-		if (allyHealth != null)
-		{
-			allyHealth.OnHealthChanged += HandleHealthChanged;
-			allyHealth.OnDied += HandleDied;
-			InitializeFromCurrentHealth(allyHealth.CurrentHealth, allyHealth.MaxHealth);
-		}
     }
 
     private void OnDisable()
@@ -86,11 +78,6 @@ public class WorldSpaceHealthBarUI : MonoBehaviour
             enemyHealth.OnHealthChanged -= HandleHealthChanged;
             enemyHealth.OnDied -= HandleDied;
         }
-		if (allyHealth != null)
-		{
-			allyHealth.OnHealthChanged -= HandleHealthChanged;
-			allyHealth.OnDied -= HandleDied;
-		}
     }
 
     private void LateUpdate()
@@ -135,7 +122,6 @@ public class WorldSpaceHealthBarUI : MonoBehaviour
 		int max = 1;
 		if (playerHealth != null) max = playerHealth.MaxHealth;
 		else if (enemyHealth != null) max = enemyHealth.MaxHealth;
-		else if (allyHealth != null) max = allyHealth.MaxHealth;
 		UpdateFill(0, max);
 	}
 
