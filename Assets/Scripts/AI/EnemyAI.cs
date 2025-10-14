@@ -17,7 +17,6 @@ public class EnemyAI : MonoBehaviour
     [Header("Targeting")]
     [SerializeField] private Transform player; // auto-find by tag if not set
     [SerializeField] private string playerTag = "Player";
-    [SerializeField] private string allyTag = "Ally"; // Legionaries / allies to consider as targets
     [SerializeField] private float rescanInterval = 0.5f;
 
     [Header("Animation & Casting (optional)")]
@@ -54,7 +53,7 @@ public class EnemyAI : MonoBehaviour
 
     void Update()
     {
-        // Regularly reacquire best target between Player and Allies
+        // Regularly reacquire best target (Player only)
         scanTimer += Time.deltaTime;
         if (currentTarget == null || scanTimer >= rescanInterval)
         {
@@ -182,32 +181,7 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        // Consider Allies (Legionaries)
-        GameObject[] allies = null;
-        try
-        {
-            allies = GameObject.FindGameObjectsWithTag(allyTag);
-        }
-        catch
-        {
-            allies = null;
-        }
-
-        if (allies != null)
-        {
-            foreach (var a in allies)
-            {
-                if (a == null) continue;
-                var t = a.transform;
-                if (IsTargetDead(t)) continue;
-                float d = Vector3.Distance(myPos, t.position);
-                if (d < bestDist)
-                {
-                    bestDist = d;
-                    best = t;
-                }
-            }
-        }
+        // Allies removed: do not target allies anymore
 
         currentTarget = best;
     }
@@ -217,8 +191,6 @@ public class EnemyAI : MonoBehaviour
         if (t == null) return true;
         var ph = t.GetComponentInParent<PlayerHealth>();
         if (ph != null) return ph.IsDead;
-        var ah = t.GetComponentInParent<AllyHealth>();
-        if (ah != null) return ah.IsDead;
         return false;
     }
 }

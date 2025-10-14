@@ -48,31 +48,29 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/6000.1.11f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets/Scripts/Health/HKStepsBridge.cs" />
-    <Compile Include="Assets/Scripts/Other/SpellEventProxy.cs" />
+    <Compile Include="Assets/Scripts/Abilities/SpellEventProxy.cs" />
+    <Compile Include="Assets/Scripts/Abilities/MeleeEventProxy.cs" />
+    <Compile Include="Assets/Scripts/iOSBridge/HKStepsBridge.cs" />
+    <Compile Include="Assets/Scripts/AI/EnemyAI.cs" />
     <Compile Include="Assets/Scripts/Other/WhoopClient.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
-    <Compile Include="Assets/Scripts/Combat/WorldSpaceHealthBarUI.cs" />
-    <Compile Include="Assets/Scripts/Combat/Projectile.cs" />
-    <Compile Include="Assets/Scripts/Combat/AllyAI.cs" />
     <Compile Include="Assets/Scripts/Gameplay/EnemySpawnPoint.cs" />
-    <Compile Include="Assets/Scripts/Combat/Lifetime.cs" />
-    <Compile Include="Assets/Scripts/Combat/HealthBarUI.cs" />
+    <Compile Include="Assets/Scripts/Player/PlayerActions.cs" />
+    <Compile Include="Assets/Scripts/Health/PlayerHealth.cs" />
+    <Compile Include="Assets/Scripts/Health/EnemyHealth.cs" />
+    <Compile Include="Assets/Scripts/Player/PlayerMelee.cs" />
+    <Compile Include="Assets/Scripts/Health/HealthBase.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
     <Compile Include="Assets/Scripts/Core/CameraFollow.cs" />
-    <Compile Include="Assets/Scripts/Combat/SummonEventProxy.cs" />
-    <Compile Include="Assets/Scripts/Combat/AllyHealth.cs" />
-    <Compile Include="Assets/Scripts/Combat/PlayerSummoner.cs" />
-    <Compile Include="Assets/Scripts/Combat/PlayerActions.cs" />
-    <Compile Include="Assets/Scripts/Combat/MeleeEventProxy.cs" />
-    <Compile Include="Assets/Scripts/Combat/DamageText.cs" />
-    <Compile Include="Assets/Scripts/Combat/PlayerHealth.cs" />
-    <Compile Include="Assets/Scripts/Combat/EnemyAI.cs" />
-    <Compile Include="Assets/Scripts/Combat/SpellCaster.cs" />
-    <Compile Include="Assets/Scripts/Combat/IDamageable.cs" />
+    <Compile Include="Assets/Scripts/Core/Interfaces/IDamageable.cs" />
+    <Compile Include="Assets/Scripts/UI/HealthBarUI.cs" />
+    <Compile Include="Assets/Scripts/Core/Utilities/Lifetime.cs" />
+    <Compile Include="Assets/Scripts/Abilities/SpellCaster.cs" />
+    <Compile Include="Assets/Scripts/UI/DamageText.cs" />
+    <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
+    <Compile Include="Assets/Scripts/UI/WorldSpaceHealthBarUI.cs" />
+    <Compile Include="Assets/Scripts/Abilities/Projectile.cs" />
     <Compile Include="Assets/Scripts/Gameplay/WaveManager.cs" />
-    <Compile Include="Assets/Scripts/Combat/PlayerMelee.cs" />
-    <Compile Include="Assets/Scripts/Combat/EnemyHealth.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
