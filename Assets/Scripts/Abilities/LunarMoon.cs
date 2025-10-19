@@ -20,12 +20,18 @@ public class LunarMoon : MonoBehaviour
 	private float verticalVelocity;
 	private bool hasImpacted;
 	private GameObject indicatorToDestroy;
+	private Transform ownerRoot; // who spawned this moon; ignored for damage
 
 	public float Radius => radius;
 
 	public void SetIndicatorToDestroy(GameObject indicator)
 	{
 		indicatorToDestroy = indicator;
+	}
+
+	public void SetOwner(Transform owner)
+	{
+		ownerRoot = owner != null ? owner.root : null;
 	}
 
 	public void InitAtTarget(Vector3 groundPoint, int overrideDamage)
@@ -74,11 +80,14 @@ public class LunarMoon : MonoBehaviour
 		Collider[] hits = Physics.OverlapSphere(transform.position, radius, hitMask, QueryTriggerInteraction.Ignore);
 		for (int i = 0; i < hits.Length; i++)
 		{
-			var damageable = hits[i].GetComponentInParent<IDamageable>();
+			var col = hits[i];
+			// Prevent self-damage: skip any collider under the owner's root
+			if (ownerRoot != null && col.transform.root == ownerRoot) continue;
+			var damageable = col.GetComponentInParent<IDamageable>();
 			if (damageable != null)
 			{
 				damageable.TakeDamage(damage);
-				ShowDamageText(hits[i]);
+				ShowDamageText(col);
 			}
 		}
 	}

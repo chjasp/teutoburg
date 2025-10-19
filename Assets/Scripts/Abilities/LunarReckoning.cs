@@ -142,6 +142,7 @@ public class LunarReckoning : MonoBehaviour
 			return;
 		}
 		var moon = Instantiate(moonPrefab);
+		moon.SetOwner(transform);
 		moon.InitAtTarget(groundPoint, damage);
 		if (activeIndicator != null)
 		{
