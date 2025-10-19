@@ -54,7 +54,6 @@
     <Compile Include="Assets/Scripts/AI/EnemyAI.cs" />
     <Compile Include="Assets/Scripts/Other/WhoopClient.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
-    <Compile Include="Assets/Scripts/Gameplay/EnemySpawnPoint.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerActions.cs" />
     <Compile Include="Assets/Scripts/Health/PlayerHealth.cs" />
     <Compile Include="Assets/Scripts/Health/EnemyHealth.cs" />
@@ -70,7 +69,6 @@
     <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
     <Compile Include="Assets/Scripts/UI/WorldSpaceHealthBarUI.cs" />
     <Compile Include="Assets/Scripts/Abilities/Projectile.cs" />
-    <Compile Include="Assets/Scripts/Gameplay/WaveManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
