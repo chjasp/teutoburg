@@ -54,6 +54,7 @@
     <Compile Include="Assets/Scripts/AI/EnemyAI.cs" />
     <Compile Include="Assets/Scripts/Other/WhoopClient.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
+    <Compile Include="Assets/Scripts/Abilities/LunarReckoning.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerActions.cs" />
     <Compile Include="Assets/Scripts/Health/PlayerHealth.cs" />
     <Compile Include="Assets/Scripts/Health/EnemyHealth.cs" />
@@ -62,7 +63,9 @@
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
     <Compile Include="Assets/Scripts/Core/CameraFollow.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IDamageable.cs" />
+    <Compile Include="Assets/Scripts/Abilities/LunarMoon.cs" />
     <Compile Include="Assets/Scripts/UI/HealthBarUI.cs" />
+    <Compile Include="Assets/Scripts/Abilities/AoEIndicator.cs" />
     <Compile Include="Assets/Scripts/Core/Utilities/Lifetime.cs" />
     <Compile Include="Assets/Scripts/Abilities/SpellCaster.cs" />
     <Compile Include="Assets/Scripts/UI/DamageText.cs" />
