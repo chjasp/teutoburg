@@ -10,6 +10,7 @@ public class PlayerMelee : MonoBehaviour
 
     [Header("Damage")]
     [SerializeField] private int damage = 25;
+    [SerializeField] private DamageText damageTextPrefab;
 
     [Header("Animation")]
     [SerializeField] private string meleeTriggerName = "Melee";
@@ -87,7 +88,32 @@ public class PlayerMelee : MonoBehaviour
         if (damageable != null)
         {
             damageable.TakeDamage(damage);
+            ShowDamageText(target, damage);
         }
+    }
+
+    private void ShowDamageText(Transform target, int amount)
+    {
+        if (damageTextPrefab == null || target == null) return;
+
+        Collider col = target.GetComponentInChildren<Collider>();
+        if (col == null) col = target.GetComponent<Collider>();
+
+        Vector3 spawnPos;
+        Transform parent;
+        if (col != null)
+        {
+            spawnPos = col.bounds.center + Vector3.up * (col.bounds.extents.y + 0.5f);
+            parent = col.transform;
+        }
+        else
+        {
+            spawnPos = target.position + Vector3.up * 1.2f;
+            parent = target;
+        }
+
+        var dt = Instantiate(damageTextPrefab, spawnPos, Quaternion.identity, parent);
+        dt.Init(amount);
     }
 }
 
