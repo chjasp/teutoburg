@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Teutoburg.Health;
 using UnityEngine.EventSystems;
+using System;
+using System.Reflection;
+using System.Globalization;
 
 [DisallowMultipleComponent]
 public class LunarReckoning : MonoBehaviour
@@ -17,7 +21,8 @@ public class LunarReckoning : MonoBehaviour
 	private LineRenderer activeIndicator;
 
 	[Header("Damage")]
-	[SerializeField] private int damage = 250;
+	[SerializeField] private int baseDamage = 250;
+	[SerializeField] private float hoursToDamageFactor = 25f; // e.g., 8h => +200 damage
 
 	// Targeting state
 	private bool awaitingGroundSelection;
@@ -143,12 +148,60 @@ public class LunarReckoning : MonoBehaviour
 		}
 		var moon = Instantiate(moonPrefab);
 		moon.SetOwner(transform);
-		moon.InitAtTarget(groundPoint, damage);
+		moon.InitAtTarget(groundPoint, CalculateDamageFromSleep());
 		if (activeIndicator != null)
 		{
 			moon.SetIndicatorToDestroy(activeIndicator.gameObject);
 			activeIndicator = null;
 		}
+	}
+
+	private int CalculateDamageFromSleep()
+	{
+		// Use reflection to avoid hard compile dependency if the bridge isn't yet compiled
+		const string bridgeTypeName = "Teutoburg.Health.HKSleepBridge";
+		Type bridgeType = Type.GetType(bridgeTypeName);
+		if (bridgeType == null)
+		{
+			return baseDamage;
+		}
+
+		PropertyInfo hoursProp = bridgeType.GetProperty("YesterdaySleepHours", BindingFlags.Public | BindingFlags.Static);
+		if (hoursProp == null)
+		{
+			return baseDamage;
+		}
+
+		float hours = ConvertToFloat(hoursProp.GetValue(null));
+		if (hours < 0f)
+		{
+			MethodInfo requestMethod = bridgeType.GetMethod("RequestYesterdaySleepHours", BindingFlags.Public | BindingFlags.Static);
+			requestMethod?.Invoke(null, null);
+			hours = ConvertToFloat(hoursProp.GetValue(null));
+		}
+
+		if (hours < 0f)
+		{
+			return baseDamage;
+		}
+
+		float scaled = baseDamage + hours * hoursToDamageFactor;
+		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
+		return finalDamage;
+	}
+
+	private static float ConvertToFloat(object value)
+	{
+		if (value == null) return -1f;
+		if (value is float f) return f;
+		if (value is double d) return (float)d;
+		if (value is int i) return i;
+		if (value is string s)
+		{
+			if (float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)) return parsed;
+			if (float.TryParse(s, out parsed)) return parsed;
+		}
+		return -1f;
 	}
 
 	private void ShowIndicator(Vector3 center)

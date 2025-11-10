@@ -66,6 +66,7 @@
     <Compile Include="Assets/Scripts/Abilities/EarthbreakerSurge.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IDamageable.cs" />
     <Compile Include="Assets/Scripts/Abilities/LunarMoon.cs" />
+    <Compile Include="Assets/Scripts/iOSBridge/HKSleepBridge.cs" />
     <Compile Include="Assets/Scripts/UI/HealthBarUI.cs" />
     <Compile Include="Assets/Scripts/Abilities/AoEIndicator.cs" />
     <Compile Include="Assets/Scripts/Core/Utilities/Lifetime.cs" />
