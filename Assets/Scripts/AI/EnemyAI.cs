@@ -19,6 +19,9 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private float rescanInterval = 0.5f;
 
+    [Header("Awareness")]
+    [SerializeField] private float awarenessRange = 20f; // Only engage if within this range, unless aggroed
+
     [Header("Animation & Casting (optional)")]
     [SerializeField] private string castTriggerName = "CastSpell";
     [SerializeField] private string meleeTriggerName = "Melee";
@@ -31,6 +34,7 @@ public class EnemyAI : MonoBehaviour
     private Transform lastAttackTarget;
     private Transform currentTarget;
     private float scanTimer;
+    private bool isAggroed;
 
     void Awake()
     {
@@ -71,16 +75,24 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        // If target is dead, clear and rescan next frame
+        // If target is dead, clear aggro and rescan next frame
         if (IsTargetDead(currentTarget))
         {
             currentTarget = null;
+            isAggroed = false;
             return;
         }
 
         Vector3 toTarget = currentTarget.position - transform.position;
         toTarget.y = 0f;
         float distance = toTarget.magnitude;
+
+        // If not aggroed and target moved beyond awareness, drop target
+        if (!isAggroed && distance > awarenessRange)
+        {
+            currentTarget = null;
+            return;
+        }
 
         // Face the target
         if (toTarget.sqrMagnitude > 0.0001f)
@@ -174,7 +186,8 @@ public class EnemyAI : MonoBehaviour
         if (player != null && !IsTargetDead(player))
         {
             float d = Vector3.Distance(myPos, player.position);
-            if (d < bestDist)
+            // Only consider player if inside awareness, unless already aggroed
+            if ((isAggroed || d <= awarenessRange) && d < bestDist)
             {
                 bestDist = d;
                 best = player;
@@ -192,6 +205,16 @@ public class EnemyAI : MonoBehaviour
         var ph = t.GetComponentInParent<PlayerHealth>();
         if (ph != null) return ph.IsDead;
         return false;
+    }
+
+    public void ForceAggro()
+    {
+        isAggroed = true;
+        // Ensure we have a target once aggroed
+        if (currentTarget == null)
+        {
+            AcquireTarget();
+        }
     }
 }
 

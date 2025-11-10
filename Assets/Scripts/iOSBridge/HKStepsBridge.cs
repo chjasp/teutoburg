@@ -47,6 +47,15 @@ namespace Teutoburg.Health
             HKSteps_RequestYesterdaySteps(GameObjectName, CallbackMethod);
         }
 
+		private void Awake()
+		{
+			// Trigger an early authorization/request so the system prompt appears at startup
+			if (YesterdaySteps < 0 && LastStatus == "NotRequested")
+			{
+				RequestYesterdaySteps();
+			}
+		}
+
         // Called by native iOS plugin via UnitySendMessage
         private void OnStepsReceived(string message)
         {
