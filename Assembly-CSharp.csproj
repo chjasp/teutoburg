@@ -70,6 +70,7 @@
     <Compile Include="Assets/Scripts/UI/HealthBarUI.cs" />
     <Compile Include="Assets/Scripts/Abilities/AoEIndicator.cs" />
     <Compile Include="Assets/Scripts/Core/Utilities/Lifetime.cs" />
+    <Compile Include="Assets/Scripts/iOSBridge/HKExerciseBridge.cs" />
     <Compile Include="Assets/Scripts/UI/DamageText.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
     <Compile Include="Assets/Scripts/UI/WorldSpaceHealthBarUI.cs" />
