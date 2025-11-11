@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Teutoburg.Health;
 
 [DisallowMultipleComponent]
 public class EarthbreakerSurge : MonoBehaviour
@@ -19,7 +20,8 @@ public class EarthbreakerSurge : MonoBehaviour
 	[SerializeField] private LayerMask hitMask = ~0;      // who can be hit
 
 	[Header("Damage")]
-	[SerializeField] private int damagePerRing = 150;
+	[SerializeField] private int damagePerRing = 150; // baseline when exercise minutes are unavailable
+	[SerializeField] private float exerciseMinutesToDamageFactor = 2f; // e.g., 30 min => +60 dmg per ring
 
 	[Header("Visuals (optional)")]
 	[SerializeField] private AoEIndicator ringIndicatorPrefab; // optional; created at runtime if not set
@@ -49,15 +51,18 @@ public class EarthbreakerSurge : MonoBehaviour
 		Vector3 center = origin != null ? origin.position : transform.position;
 		center.y += 0.02f; // slight lift to avoid Z-fighting for visuals
 
+		// Compute damage once per cast for consistency
+		int ringDamage = CalculateDamageFromExerciseMinutes();
+
 		// Launch multiple rings with a small offset between them
 		for (int i = 0; i < ringCount; i++)
 		{
-			StartCoroutine(RingRoutine(center, i * ringStartInterval));
+			StartCoroutine(RingRoutine(center, i * ringStartInterval, ringDamage));
 		}
 		yield break;
 	}
 
-	private IEnumerator RingRoutine(Vector3 center, float startDelay)
+	private IEnumerator RingRoutine(Vector3 center, float startDelay, int ringDamage)
 	{
 		if (startDelay > 0f) yield return new WaitForSeconds(startDelay);
 
@@ -97,8 +102,8 @@ public class EarthbreakerSurge : MonoBehaviour
 					var damageable = col.GetComponentInParent<IDamageable>();
 					if (damageable != null)
 					{
-						damageable.TakeDamage(damagePerRing);
-						ShowDamageText(col, damagePerRing);
+						damageable.TakeDamage(ringDamage);
+						ShowDamageText(col, ringDamage);
 						alreadyHitThisRing.Add(col);
 					}
 				}
@@ -128,6 +133,26 @@ public class EarthbreakerSurge : MonoBehaviour
 		Vector3 top = target.bounds.center + Vector3.up * (target.bounds.extents.y + 0.5f);
 		var dt = Instantiate(damageTextPrefab, top, Quaternion.identity, target.transform);
 		dt.Init(amount);
+	}
+
+	private int CalculateDamageFromExerciseMinutes()
+	{
+		// Ensure a request is in-flight at least once per app session
+		if (HKExerciseBridge.YesterdayExerciseMinutes < 0f)
+		{
+			HKExerciseBridge.RequestYesterdayExerciseMinutes();
+		}
+
+		float minutes = HKExerciseBridge.YesterdayExerciseMinutes;
+		if (minutes < 0f)
+		{
+			// Not yet available or failed; return baseline
+			return damagePerRing;
+		}
+
+		float scaled = damagePerRing + minutes * exerciseMinutesToDamageFactor;
+		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
+		return finalDamage;
 	}
 }
 
