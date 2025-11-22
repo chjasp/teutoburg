@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Teutoburg.Health;
+using Teutoburg.Core;
 using UnityEngine.EventSystems;
 using System;
 using System.Reflection;
@@ -22,7 +22,7 @@ public class LunarReckoning : MonoBehaviour
 
 	[Header("Damage")]
 	[SerializeField] private int baseDamage = 250;
-	[SerializeField] private float hoursToDamageFactor = 25f; // e.g., 8h => +200 damage
+	[SerializeField] private float clarityToDamageFactor = 5f; // e.g., 100 Clarity => +500 damage
 
 	// Targeting state
 	private bool awaitingGroundSelection;
@@ -148,7 +148,7 @@ public class LunarReckoning : MonoBehaviour
 		}
 		var moon = Instantiate(moonPrefab);
 		moon.SetOwner(transform);
-		moon.InitAtTarget(groundPoint, CalculateDamageFromSleep());
+		moon.InitAtTarget(groundPoint, CalculateDamageFromClarity());
 		if (activeIndicator != null)
 		{
 			moon.SetIndicatorToDestroy(activeIndicator.gameObject);
@@ -156,36 +156,16 @@ public class LunarReckoning : MonoBehaviour
 		}
 	}
 
-	private int CalculateDamageFromSleep()
+	private int CalculateDamageFromClarity()
 	{
-		// Use reflection to avoid hard compile dependency if the bridge isn't yet compiled
-		const string bridgeTypeName = "Teutoburg.Health.HKSleepBridge";
-		Type bridgeType = Type.GetType(bridgeTypeName);
-		if (bridgeType == null)
+		if (PlayerStats.Instance == null)
 		{
 			return baseDamage;
 		}
+		
+		float clarity = PlayerStats.Instance.CurrentClarity;
 
-		PropertyInfo hoursProp = bridgeType.GetProperty("YesterdaySleepHours", BindingFlags.Public | BindingFlags.Static);
-		if (hoursProp == null)
-		{
-			return baseDamage;
-		}
-
-		float hours = ConvertToFloat(hoursProp.GetValue(null));
-		if (hours < 0f)
-		{
-			MethodInfo requestMethod = bridgeType.GetMethod("RequestYesterdaySleepHours", BindingFlags.Public | BindingFlags.Static);
-			requestMethod?.Invoke(null, null);
-			hours = ConvertToFloat(hoursProp.GetValue(null));
-		}
-
-		if (hours < 0f)
-		{
-			return baseDamage;
-		}
-
-		float scaled = baseDamage + hours * hoursToDamageFactor;
+		float scaled = baseDamage + clarity * clarityToDamageFactor;
 		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
 		return finalDamage;
 	}
@@ -227,5 +207,3 @@ public class LunarReckoning : MonoBehaviour
 		}
 	}
 }
-
-

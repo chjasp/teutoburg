@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using Teutoburg.Core;
 
 namespace Teutoburg.Health
 {
@@ -77,6 +78,13 @@ namespace Teutoburg.Health
 				YesterdaySleepHours = hours;
 				LastStatus = "OK";
 				Debug.Log($"[HKSleepBridge] Yesterday sleep hours: {YesterdaySleepHours}");
+
+				// Update PlayerStats (convert hours to seconds)
+				if (PlayerStats.Instance != null)
+				{
+					float seconds = hours * 3600f;
+					PlayerStats.Instance.UpdateSleep(seconds);
+				}
 			}
 			else
 			{
@@ -86,5 +94,3 @@ namespace Teutoburg.Health
 		}
 	}
 }
-
-

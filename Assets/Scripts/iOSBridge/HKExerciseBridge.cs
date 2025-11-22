@@ -1,33 +1,34 @@
 // HKExerciseBridge.cs
 using System.Runtime.InteropServices;
 using UnityEngine;
+using Teutoburg.Core;
 
 namespace Teutoburg.Health
 {
-	// Persistent singleton receiver for iOS HealthKit exercise minutes (yesterday's total).
+	// Persistent singleton receiver for iOS HealthKit Active Energy (Calories)
 	public class HKExerciseBridge : MonoBehaviour
 	{
 		private const string GameObjectName = "HKExerciseBridge";
-		private const string CallbackMethod = nameof(OnExerciseMinutesReceived);
+		private const string CallbackMethod = nameof(OnCaloriesReceived);
 
 		private static HKExerciseBridge _instance;
 
-		// Last retrieved exercise minutes for yesterday. Negative means unknown/not fetched.
-		public static float YesterdayExerciseMinutes { get; private set; } = -1f;
+		// Last retrieved active energy (Calories) for yesterday. Negative means unknown/not fetched.
+		public static float YesterdayCalories { get; private set; } = -1f;
 
 		// Simple status string for debugging UI/logs
 		public static string LastStatus { get; private set; } = "NotRequested";
 
 #if UNITY_IOS && !UNITY_EDITOR
 		[DllImport("__Internal")]
-		private static extern void HKExercise_RequestYesterdayMinutes(string gameObjectName, string callbackMethod);
+		private static extern void HKHealth_RequestActiveEnergy(string gameObjectName, string callbackMethod);
 #else
-		private static void HKExercise_RequestYesterdayMinutes(string gameObjectName, string callbackMethod)
+		private static void HKHealth_RequestActiveEnergy(string gameObjectName, string callbackMethod)
 		{
-			// Editor/other platforms: simulate 25 minutes for easy testing
-			Debug.Log($"[HKExerciseBridge] Simulating exercise minutes in editor for {gameObjectName}.{callbackMethod}");
+			// Editor/other platforms: simulate 500 calories for easy testing
+			Debug.Log($"[HKExerciseBridge] Simulating active energy in editor for {gameObjectName}.{callbackMethod}");
 			var go = GameObject.Find(gameObjectName);
-			go?.SendMessage(callbackMethod, "25.0");
+			go?.SendMessage(callbackMethod, "500.0");
 		}
 #endif
 
@@ -40,23 +41,23 @@ namespace Teutoburg.Health
 			_instance = go.AddComponent<HKExerciseBridge>();
 		}
 
-		public static void RequestYesterdayExerciseMinutes()
+		public static void RequestYesterdayCalories()
 		{
 			LastStatus = "Requesting";
-			HKExercise_RequestYesterdayMinutes(GameObjectName, CallbackMethod);
+			HKHealth_RequestActiveEnergy(GameObjectName, CallbackMethod);
 		}
 
 		private void Awake()
 		{
 			// Trigger an early authorization/request so the system prompt appears at startup
-			if (YesterdayExerciseMinutes < 0f && LastStatus == "NotRequested")
+			if (YesterdayCalories < 0f && LastStatus == "NotRequested")
 			{
-				RequestYesterdayExerciseMinutes();
+				RequestYesterdayCalories();
 			}
 		}
 
 		// Called by native iOS plugin via UnitySendMessage
-		private void OnExerciseMinutesReceived(string message)
+		private void OnCaloriesReceived(string message)
 		{
 			if (string.IsNullOrEmpty(message))
 			{
@@ -71,19 +72,23 @@ namespace Teutoburg.Health
 				return;
 			}
 
-			if (float.TryParse(message, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var minutes))
+			if (float.TryParse(message, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var calories))
 			{
-				YesterdayExerciseMinutes = minutes;
+				YesterdayCalories = calories;
 				LastStatus = "OK";
-				Debug.Log($"[HKExerciseBridge] Yesterday exercise minutes: {YesterdayExerciseMinutes}");
+				Debug.Log($"[HKExerciseBridge] Yesterday active energy (calories): {YesterdayCalories}");
+				
+				// Update PlayerStats
+				if (PlayerStats.Instance != null)
+				{
+					PlayerStats.Instance.UpdateCalories(calories);
+				}
 			}
 			else
 			{
 				LastStatus = "ParseError:" + message;
-				Debug.LogWarning($"[HKExerciseBridge] Could not parse exercise minutes: '{message}'");
+				Debug.LogWarning($"[HKExerciseBridge] Could not parse calories: '{message}'");
 			}
 		}
 	}
 }
-
-
