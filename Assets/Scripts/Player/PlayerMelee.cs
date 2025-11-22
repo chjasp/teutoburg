@@ -9,7 +9,9 @@ public class PlayerMelee : MonoBehaviour
     [SerializeField] private float autoAimAngle = 45f; // degrees cone in front
 
     [Header("Damage")]
-    [SerializeField] private int damage = 25;
+    [SerializeField] private int damage = 25; // fallback/base damage
+    [SerializeField] private bool useEquipmentDamage = true;
+    [SerializeField] private Teutoburg.Loot.Equipment equipment; // auto-find if null
     [SerializeField] private DamageText damageTextPrefab;
 
     [Header("Animation")]
@@ -23,6 +25,11 @@ public class PlayerMelee : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+        }
+        if (equipment == null)
+        {
+            equipment = GetComponent<Teutoburg.Loot.Equipment>();
+            if (equipment == null) equipment = GetComponentInParent<Teutoburg.Loot.Equipment>();
         }
     }
 
@@ -87,8 +94,17 @@ public class PlayerMelee : MonoBehaviour
         var damageable = target.GetComponentInParent<IDamageable>();
         if (damageable != null)
         {
-            damageable.TakeDamage(damage);
-            ShowDamageText(target, damage);
+            int finalDamage = damage;
+            if (useEquipmentDamage && equipment != null)
+            {
+                equipment.GetWeaponDamageRange(out int minDmg, out int maxDmg);
+                if (maxDmg > 0)
+                {
+                    finalDamage = Random.Range(minDmg, maxDmg + 1);
+                }
+            }
+            damageable.TakeDamage(finalDamage);
+            ShowDamageText(target, finalDamage);
         }
     }
 
