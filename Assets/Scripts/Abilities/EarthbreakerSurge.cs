@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Teutoburg.Health;
+using Teutoburg.Core;
 
 [DisallowMultipleComponent]
 public class EarthbreakerSurge : MonoBehaviour
@@ -20,8 +21,8 @@ public class EarthbreakerSurge : MonoBehaviour
 	[SerializeField] private LayerMask hitMask = ~0;      // who can be hit
 
 	[Header("Damage")]
-	[SerializeField] private int damagePerRing = 150; // baseline when exercise minutes are unavailable
-	[SerializeField] private float exerciseMinutesToDamageFactor = 2f; // e.g., 30 min => +60 dmg per ring
+	[SerializeField] private int damagePerRing = 150; // baseline
+	[SerializeField] private float clarityToDamageFactor = 2f; // e.g., 100 Clarity => +200 dmg per ring
 
 	[Header("Visuals (optional)")]
 	[SerializeField] private AoEIndicator ringIndicatorPrefab; // optional; created at runtime if not set
@@ -52,7 +53,7 @@ public class EarthbreakerSurge : MonoBehaviour
 		center.y += 0.02f; // slight lift to avoid Z-fighting for visuals
 
 		// Compute damage once per cast for consistency
-		int ringDamage = CalculateDamageFromExerciseMinutes();
+		int ringDamage = CalculateDamageFromClarity();
 
 		// Launch multiple rings with a small offset between them
 		for (int i = 0; i < ringCount; i++)
@@ -135,25 +136,19 @@ public class EarthbreakerSurge : MonoBehaviour
 		dt.Init(amount);
 	}
 
-	private int CalculateDamageFromExerciseMinutes()
+	private int CalculateDamageFromClarity()
 	{
-		// Ensure a request is in-flight at least once per app session
-		if (HKExerciseBridge.YesterdayExerciseMinutes < 0f)
+		if (PlayerStats.Instance == null)
 		{
-			HKExerciseBridge.RequestYesterdayExerciseMinutes();
-		}
-
-		float minutes = HKExerciseBridge.YesterdayExerciseMinutes;
-		if (minutes < 0f)
-		{
-			// Not yet available or failed; return baseline
+			// Fallback if PlayerStats is missing
 			return damagePerRing;
 		}
 
-		float scaled = damagePerRing + minutes * exerciseMinutesToDamageFactor;
+		float clarity = PlayerStats.Instance.CurrentClarity;
+		
+		// Linear scaling: base + factor * clarity
+		float scaled = damagePerRing + clarity * clarityToDamageFactor;
 		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
 		return finalDamage;
 	}
 }
-
-
