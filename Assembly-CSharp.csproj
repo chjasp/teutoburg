@@ -76,7 +76,6 @@
     <Compile Include="Assets/Scripts/LootSystem/ItemEnums.cs" />
     <Compile Include="Assets/Scripts/Abilities/Dynamo.cs" />
     <Compile Include="Assets/Scripts/Core/Utilities/Lifetime.cs" />
-    <Compile Include="Assets/Scripts/Core/ProceduralLevelGenerator.cs" />
     <Compile Include="Assets/Scripts/iOSBridge/HKExerciseBridge.cs" />
     <Compile Include="Assets/Scripts/UI/DamageText.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
