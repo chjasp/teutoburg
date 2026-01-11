@@ -21,7 +21,22 @@ public class Projectile : MonoBehaviour
     private float lifeTimer;
     private bool hasExploded;
 
-    // Called by SpellCaster right after Instantiate
+    void Start()
+    {
+        Debug.Log($"[Projectile] Start() called at {transform.position}");
+    }
+
+    void OnEnable()
+    {
+        Debug.Log($"[Projectile] OnEnable() called");
+    }
+
+    void OnDestroy()
+    {
+        Debug.Log($"[Projectile] OnDestroy() called - hasExploded: {hasExploded}, lifeTimer: {lifeTimer:F2}s");
+    }
+
+    // Called by Dynamo right after Instantiate
     public void Init(Vector3 dir, float spd)
     {
         direction = dir.normalized;
@@ -36,13 +51,23 @@ public class Projectile : MonoBehaviour
 
     void Update()
     {
+        if (hasExploded) return;
+        
         // Move forward
         transform.position += direction * speed * Time.deltaTime;
 
         // Timeout explosion
         lifeTimer += Time.deltaTime;
-        if (!hasExploded && lifeTimer >= lifetime)
+        
+        // Log first few frames to verify movement
+        if (lifeTimer < 0.1f)
         {
+            Debug.Log($"[Projectile] Update - pos: {transform.position}, lifeTimer: {lifeTimer:F3}s");
+        }
+        
+        if (lifeTimer >= lifetime)
+        {
+            Debug.Log($"[Projectile] Lifetime expired ({lifetime}s) - exploding");
             Explode();
         }
     }
@@ -50,6 +75,8 @@ public class Projectile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (hasExploded) return;
+
+        Debug.Log($"[Projectile] Hit: {other.name} (tag: {other.tag}, type: {other.GetType().Name})");
 
         // Existing: explode + show damage on enemies
         if (other.CompareTag(explodeOnTag))
@@ -60,9 +87,10 @@ public class Projectile : MonoBehaviour
             return;
         }
 
-        // NEW: explode when touching Unity Terrain
+        // Explode when touching Unity Terrain
         if (other is TerrainCollider)
         {
+            Debug.Log("[Projectile] Hit terrain - exploding");
             Explode();
             return;
         }
@@ -92,6 +120,7 @@ public class Projectile : MonoBehaviour
 
     private void Explode()
     {
+        Debug.Log($"[Projectile] Explode() called at {transform.position}");
         hasExploded = true;
 
         if (explosionPrefab != null)

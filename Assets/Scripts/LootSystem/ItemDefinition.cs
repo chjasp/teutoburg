@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// Author-time definition of an item. Holds base stats, visuals, rarity and possible affixes.
     /// </summary>
-    [CreateAssetMenu(menuName = "Teutoburg/Loot/Item Definition", fileName = "ItemDefinition")]
+    [CreateAssetMenu(menuName = "Axiom/Loot/Item Definition", fileName = "ItemDefinition")]
     public sealed class ItemDefinition : ScriptableObject
     {
         [Header("Identity & Presentation")]

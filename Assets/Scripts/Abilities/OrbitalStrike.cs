@@ -1,16 +1,16 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Teutoburg.Core;
+using Axiom.Core;
 using UnityEngine.EventSystems;
 using System;
 using System.Reflection;
 using System.Globalization;
 
 [DisallowMultipleComponent]
-public class LunarReckoning : MonoBehaviour
+public class OrbitalStrike : MonoBehaviour
 {
 	[Header("Setup")]
-	[SerializeField] private LunarMoon moonPrefab;
+	[SerializeField] private OrbitalDrone dronePrefab;
 	[SerializeField] private Transform aimCamera; // used for screen-to-world ray
 
 	[Header("Targeting")]
@@ -22,10 +22,11 @@ public class LunarReckoning : MonoBehaviour
 
 	[Header("Damage")]
 	[SerializeField] private int baseDamage = 250;
-	[SerializeField] private float clarityToDamageFactor = 5f; // e.g., 100 Clarity => +500 damage
+	[SerializeField] private float focusToDamageFactor = 5f; // e.g., 100 Focus => +500 damage
 
 	// Targeting state
 	private bool awaitingGroundSelection;
+	private int targetingFrameCount; // skip first frame to avoid button position
 
 	void Awake()
 	{
@@ -36,7 +37,7 @@ public class LunarReckoning : MonoBehaviour
 	}
 
 	// Hook this from the Input System (performed on tap/click)
-	public void OnCastLunarReckoning(InputAction.CallbackContext ctx)
+	public void OnCastOrbitalStrike(InputAction.CallbackContext ctx)
 	{
 		if (!ctx.performed) return;
 		StartTargeting();
@@ -45,35 +46,117 @@ public class LunarReckoning : MonoBehaviour
 	// UI Button-friendly wrapper (appears in OnClick list)
 	public void CastAtPointer()
 	{
-		Debug.Log("CastAtPointer");
 		StartTargeting();
 	}
 
 	private void StartTargeting()
 	{
 		awaitingGroundSelection = true;
+		targetingFrameCount = 0;
 	}
 
 	public bool TryCastAtPointer()
 	{
-		if (moonPrefab == null || aimCamera == null) return false;
+		if (dronePrefab == null || aimCamera == null) return false;
 
 		Vector3 target;
 		if (!TryGetGroundPointFromPointer(out target)) return false;
 
-		SpawnMoonAt(target);
+		SpawnDroneAt(target);
 		return true;
 	}
 
 	void Update()
 	{
 		if (!awaitingGroundSelection) return;
+		
+		targetingFrameCount++;
+		
+		// Skip first few frames to avoid using button tap position
+		if (targetingFrameCount <= 2)
+		{
+			return;
+		}
+		
+		// Check for tap/click release FIRST - if we're spawning, don't touch the indicator
 		Vector3 point;
 		if (TryGetGroundTap(out point))
 		{
 			awaitingGroundSelection = false;
-			SpawnMoonAt(point);
+			// Don't hide indicator - the drone will destroy it on impact
+			SpawnDroneAt(point);
+			return; // Exit early, don't process hover logic
 		}
+		
+		// Check for active pointer input (touch held down, or mouse over game area)
+		Vector3 hoverPoint;
+		bool hasValidHover = TryGetActivePointerPosition(out hoverPoint);
+		
+		if (hasValidHover)
+		{
+			ShowIndicator(hoverPoint);
+		}
+		else
+		{
+			// Hide indicator when not actively pointing at valid ground
+			HideIndicator();
+		}
+	}
+
+	/// <summary>
+	/// Gets pointer position only when there's ACTIVE input (touch held, or mouse not over UI).
+	/// Used for showing the indicator while aiming.
+	/// </summary>
+	private bool TryGetActivePointerPosition(out Vector3 point)
+	{
+		point = default;
+		Camera cam = aimCamera != null ? aimCamera.GetComponent<Camera>() : Camera.main;
+		if (cam == null)
+		{
+			return false;
+		}
+
+		Vector2 screenPos = Vector2.zero;
+		bool hasActiveInput = false;
+
+		// Touch: only when finger is actively pressing (dragging to aim)
+		if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
+		{
+			int fingerId = Touchscreen.current.primaryTouch.touchId.ReadValue();
+			// Skip if over UI
+			if (!IsPointerOverUI(fingerId))
+			{
+				screenPos = Touchscreen.current.primaryTouch.position.ReadValue();
+				hasActiveInput = true;
+			}
+		}
+		// Mouse: when button is held OR just hovering (for desktop preview)
+		else if (Mouse.current != null)
+		{
+			// Only show indicator when mouse button is held for consistency with touch
+			if (Mouse.current.leftButton.isPressed)
+			{
+				if (!IsPointerOverUI(-1))
+				{
+					screenPos = Mouse.current.position.ReadValue();
+					hasActiveInput = true;
+				}
+			}
+		}
+
+		if (!hasActiveInput)
+		{
+			return false;
+		}
+
+		Ray ray = cam.ScreenPointToRay(screenPos);
+		RaycastHit hit;
+		if (Physics.Raycast(ray, out hit, maxTargetDistance, groundMask, QueryTriggerInteraction.Ignore))
+		{
+			point = hit.point;
+			return true;
+		}
+		return false;
 	}
 
 	private bool TryGetGroundPointFromPointer(out Vector3 point)
@@ -126,8 +209,6 @@ public class LunarReckoning : MonoBehaviour
 		if (Physics.Raycast(ray, out hit, maxTargetDistance, groundMask, QueryTriggerInteraction.Ignore))
 		{
 			point = hit.point;
-			// Preview indicator while aiming (on drag move or hover)
-			ShowIndicator(point);
 			return true;
 		}
 		return false;
@@ -139,33 +220,33 @@ public class LunarReckoning : MonoBehaviour
 		return EventSystem.current.IsPointerOverGameObject(pointerId);
 	}
 
-	private void SpawnMoonAt(Vector3 groundPoint)
+	private void SpawnDroneAt(Vector3 groundPoint)
 	{
-		if (moonPrefab == null)
+		if (dronePrefab == null)
 		{
-			Debug.LogWarning("LunarReckoning: moonPrefab is not assigned. Assign a LunarMoon prefab on the component.");
+			Debug.LogWarning("[OrbitalStrike] dronePrefab is not assigned!");
 			return;
 		}
-		var moon = Instantiate(moonPrefab);
-		moon.SetOwner(transform);
-		moon.InitAtTarget(groundPoint, CalculateDamageFromClarity());
+		var drone = Instantiate(dronePrefab);
+		drone.SetOwner(transform);
+		drone.InitAtTarget(groundPoint, CalculateDamageFromFocus());
 		if (activeIndicator != null)
 		{
-			moon.SetIndicatorToDestroy(activeIndicator.gameObject);
+			drone.SetIndicatorToDestroy(activeIndicator.gameObject);
 			activeIndicator = null;
 		}
 	}
 
-	private int CalculateDamageFromClarity()
+	private int CalculateDamageFromFocus()
 	{
 		if (PlayerStats.Instance == null)
 		{
 			return baseDamage;
 		}
 		
-		float clarity = PlayerStats.Instance.CurrentClarity;
+		float focus = PlayerStats.Instance.CurrentFocus;
 
-		float scaled = baseDamage + clarity * clarityToDamageFactor;
+		float scaled = baseDamage + focus * focusToDamageFactor;
 		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
 		return finalDamage;
 	}
@@ -186,14 +267,18 @@ public class LunarReckoning : MonoBehaviour
 
 	private void ShowIndicator(Vector3 center)
 	{
-		if (indicatorPrefab == null) return;
+		if (indicatorPrefab == null)
+		{
+			return;
+		}
 		if (activeIndicator == null)
 		{
 			activeIndicator = Instantiate(indicatorPrefab);
 			activeIndicator.loop = true;
 			activeIndicator.useWorldSpace = true;
 		}
-		float radius = moonPrefab != null ? moonPrefab.Radius : 3.5f;
+		activeIndicator.enabled = true;
+		float radius = dronePrefab != null ? dronePrefab.Radius : 3.5f;
 		int segments = Mathf.Max(32, activeIndicator.positionCount > 0 ? activeIndicator.positionCount : 48);
 		activeIndicator.positionCount = segments;
 		float angleStep = Mathf.PI * 2f / segments;
@@ -204,6 +289,14 @@ public class LunarReckoning : MonoBehaviour
 			float x = Mathf.Cos(a) * radius;
 			float z = Mathf.Sin(a) * radius;
 			activeIndicator.SetPosition(i, new Vector3(center.x + x, y, center.z + z));
+		}
+	}
+
+	private void HideIndicator()
+	{
+		if (activeIndicator != null)
+		{
+			activeIndicator.enabled = false;
 		}
 	}
 }

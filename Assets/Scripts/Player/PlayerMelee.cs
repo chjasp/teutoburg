@@ -11,7 +11,7 @@ public class PlayerMelee : MonoBehaviour
     [Header("Damage")]
     [SerializeField] private int damage = 25; // fallback/base damage
     [SerializeField] private bool useEquipmentDamage = true;
-    [SerializeField] private Teutoburg.Loot.Equipment equipment; // auto-find if null
+    [SerializeField] private Axiom.Loot.Equipment equipment; // auto-find if null
     [SerializeField] private DamageText damageTextPrefab;
 
     [Header("Animation")]
@@ -28,8 +28,8 @@ public class PlayerMelee : MonoBehaviour
         }
         if (equipment == null)
         {
-            equipment = GetComponent<Teutoburg.Loot.Equipment>();
-            if (equipment == null) equipment = GetComponentInParent<Teutoburg.Loot.Equipment>();
+            equipment = GetComponent<Axiom.Loot.Equipment>();
+            if (equipment == null) equipment = GetComponentInParent<Axiom.Loot.Equipment>();
         }
     }
 

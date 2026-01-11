@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// ScriptableObject describing the items an enemy type can drop, with weights.
     /// </summary>
-    [CreateAssetMenu(menuName = "Teutoburg/Loot/Loot Table", fileName = "LootTable")]
+    [CreateAssetMenu(menuName = "Axiom/Loot/Loot Table", fileName = "LootTable")]
     public sealed class LootTable : ScriptableObject
     {
         [Serializable]
