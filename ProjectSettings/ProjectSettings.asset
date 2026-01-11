@@ -569,7 +569,8 @@ PlayerSettings:
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
-  cameraUsageDescription: 
+  cameraUsageDescription: This app requires camera access to photograph offerings
+    at the altar.
   locationUsageDescription: 
   microphoneUsageDescription: 
   bluetoothUsageDescription: 
