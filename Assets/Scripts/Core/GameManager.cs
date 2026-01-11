@@ -2,15 +2,8 @@ using UnityEngine;
 
 namespace Axiom.Core
 {
-    public enum GameState
-    {
-        Citadel,
-        Breach,
-        OccupiedSector
-    }
-
     /// <summary>
-    /// Manages the global game state and progression (Depth).
+    /// Manages the global game state.
     /// </summary>
     public class GameManager : MonoBehaviour
     {
@@ -29,15 +22,6 @@ namespace Axiom.Core
             }
         }
 
-        [Header("Progression")]
-        [SerializeField] private int currentDepth = 0;
-        [SerializeField] private GameState currentState = GameState.Citadel;
-
-        public int CurrentDepth => currentDepth;
-        public GameState CurrentState => currentState;
-
-        public event System.Action<int> OnDepthChanged;
-
         private void Awake()
         {
             if (_instance == null)
@@ -52,38 +36,12 @@ namespace Axiom.Core
         }
 
         /// <summary>
-        /// Advances the depth by 1 and updates the GameState.
+        /// Resets the current run state.
         /// </summary>
-        public void IncrementDepth()
-        {
-            currentDepth++;
-            UpdateState();
-            Debug.Log($"[GameManager] Depth increased to {currentDepth}. State: {currentState}");
-            OnDepthChanged?.Invoke(currentDepth);
-        }
-
         public void ResetRun()
         {
-            currentDepth = 0;
-            UpdateState();
-            OnDepthChanged?.Invoke(currentDepth);
-        }
-
-        private void UpdateState()
-        {
-            if (currentDepth == 0)
-            {
-                currentState = GameState.Citadel;
-            }
-            else if (currentDepth >= 1 && currentDepth < 10)
-            {
-                currentState = GameState.Breach;
-            }
-            else
-            {
-                currentState = GameState.OccupiedSector;
-            }
+            // Placeholder for future run-reset logic (respawn, stats reset, etc.)
+            Debug.Log("[GameManager] Run reset.");
         }
     }
 }
-
