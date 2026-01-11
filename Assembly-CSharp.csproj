@@ -63,6 +63,7 @@
     <Compile Include="Assets/Scripts/UI/Inventory/InventoryUIController.cs" />
     <Compile Include="Assets/Scripts/LootSystem/ItemDefinition.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
+    <Compile Include="Assets/Scripts/Phygital/SacrificeCameraUI.cs" />
     <Compile Include="Assets/Scripts/UI/Inventory/ItemDetailPanelUI.cs" />
     <Compile Include="Assets/Scripts/LootSystem/LootTable.cs" />
     <Compile Include="Assets/Scripts/Core/CameraFollow.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="Assets/Scripts/Abilities/OrbitalStrike.cs" />
     <Compile Include="Assets/Scripts/LootSystem/WorldItemPickup.cs" />
     <Compile Include="Assets/Scripts/Abilities/EMP.cs" />
+    <Compile Include="Assets/Scripts/Phygital/AltarInteraction.cs" />
     <Compile Include="Assets/Scripts/UI/Inventory/EquipmentPanelUI.cs" />
     <Compile Include="Assets/Scripts/Core/GameManager.cs" />
     <Compile Include="Assets/Scripts/LootSystem/LootDropper.cs" />

@@ -12,6 +12,9 @@ public class Projectile : MonoBehaviour
     [SerializeField] private float lifetime = 3f;               // explode after this many seconds
     [SerializeField] private GameObject explosionPrefab;         // your particle burst
     [SerializeField] private string explodeOnTag = "Enemy";      // what we react to
+    [SerializeField] private bool explodeOnEnvironment = true;   // explode on walls/obstacles
+    [SerializeField] private LayerMask ignoreLayers;             // layers to pass through (e.g., Player)
+    [SerializeField] private float spawnImmunityTime = 0.05f;    // ignore collisions for this long after spawn
 
     // Damage text
     [Header("Damage")]
@@ -75,10 +78,20 @@ public class Projectile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (hasExploded) return;
+        
+        // Brief immunity after spawn to avoid hitting the player who fired
+        if (lifeTimer < spawnImmunityTime) return;
 
-        Debug.Log($"[Projectile] Hit: {other.name} (tag: {other.tag}, type: {other.GetType().Name})");
+        // Check if this layer should be ignored (e.g., Player layer)
+        int otherLayer = other.gameObject.layer;
+        if (((1 << otherLayer) & ignoreLayers) != 0)
+        {
+            return; // Pass through ignored layers
+        }
 
-        // Existing: explode + show damage on enemies
+        Debug.Log($"[Projectile] Hit: {other.name} (tag: {other.tag}, layer: {LayerMask.LayerToName(otherLayer)})");
+
+        // Explode + apply damage on enemies
         if (other.CompareTag(explodeOnTag))
         {
             ApplyDamage(other);
@@ -94,8 +107,59 @@ public class Projectile : MonoBehaviour
             Explode();
             return;
         }
+
+        // Explode on any other solid environment (walls, obstacles, etc.)
+        if (explodeOnEnvironment)
+        {
+            Debug.Log($"[Projectile] Hit environment ({other.name}) - exploding");
+            Explode();
+            return;
+        }
     }
 
+    // For walls/obstacles with non-trigger colliders
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (hasExploded) return;
+        
+        // Brief immunity after spawn to avoid hitting the player who fired
+        if (lifeTimer < spawnImmunityTime) return;
+
+        int otherLayer = collision.gameObject.layer;
+        if (((1 << otherLayer) & ignoreLayers) != 0)
+        {
+            return;
+        }
+
+        Debug.Log($"[Projectile] Collision with: {collision.gameObject.name} (layer: {LayerMask.LayerToName(otherLayer)})");
+
+        // Check if it's an enemy
+        if (collision.gameObject.CompareTag(explodeOnTag))
+        {
+            var damageable = collision.gameObject.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(damage);
+            }
+            ShowDamageAtPoint(collision.contacts[0].point);
+            Explode();
+            return;
+        }
+
+        // Explode on environment collision
+        if (explodeOnEnvironment)
+        {
+            Debug.Log($"[Projectile] Hit solid environment ({collision.gameObject.name}) - exploding");
+            Explode();
+        }
+    }
+
+    private void ShowDamageAtPoint(Vector3 point)
+    {
+        if (damageTextPrefab == null) return;
+        var dt = Instantiate(damageTextPrefab, point + Vector3.up * 0.5f, Quaternion.identity);
+        dt.Init(damage);
+    }
 
     private void ApplyDamage(Collider enemy)
     {
