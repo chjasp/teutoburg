@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// World representation of a dropped item. Holds an ItemInstance and handles pickup.

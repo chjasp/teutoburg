@@ -2,14 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Teutoburg.Health;
-using Teutoburg.Core;
+using Axiom.Health;
+using Axiom.Core;
 
 [DisallowMultipleComponent]
-public class EarthbreakerSurge : MonoBehaviour
+public class EMP : MonoBehaviour
 {
 	[Header("Setup")]
-	[SerializeField] private Transform origin; // where the slam originates (defaults to this.transform)
+	[SerializeField] private Transform origin; // where the pulse originates (defaults to this.transform)
     private Transform ownerRoot; // cached root to avoid self-damage
 
 	[Header("Rings")]
@@ -22,7 +22,7 @@ public class EarthbreakerSurge : MonoBehaviour
 
 	[Header("Damage")]
 	[SerializeField] private int damagePerRing = 150; // baseline
-	[SerializeField] private float clarityToDamageFactor = 2f; // e.g., 100 Clarity => +200 dmg per ring
+	[SerializeField] private float focusToDamageFactor = 2f; // e.g., 100 Focus => +200 dmg per ring
 
 	[Header("Visuals (optional)")]
 	[SerializeField] private AoEIndicator ringIndicatorPrefab; // optional; created at runtime if not set
@@ -35,25 +35,25 @@ public class EarthbreakerSurge : MonoBehaviour
 	}
 
 	// UI Button-friendly entry point
-	public void CastEarthbreaker()
+	public void CastEMP()
 	{
-		StartCoroutine(EarthbreakerRoutine());
+		StartCoroutine(EMPRoutine());
 	}
 
 	// Input System callback-friendly wrapper (optional)
-	public void OnCastEarthbreaker(InputAction.CallbackContext ctx)
+	public void OnCastEMP(InputAction.CallbackContext ctx)
 	{
 		if (!ctx.performed) return;
-		CastEarthbreaker();
+		CastEMP();
 	}
 
-	private IEnumerator EarthbreakerRoutine()
+	private IEnumerator EMPRoutine()
 	{
 		Vector3 center = origin != null ? origin.position : transform.position;
 		center.y += 0.02f; // slight lift to avoid Z-fighting for visuals
 
 		// Compute damage once per cast for consistency
-		int ringDamage = CalculateDamageFromClarity();
+		int ringDamage = CalculateDamageFromFocus();
 
 		// Launch multiple rings with a small offset between them
 		for (int i = 0; i < ringCount; i++)
@@ -123,7 +123,7 @@ public class EarthbreakerSurge : MonoBehaviour
 			return Instantiate(ringIndicatorPrefab);
 		}
 		// Minimal runtime-created indicator if no prefab was assigned
-		var go = new GameObject("Earthbreaker Ring");
+		var go = new GameObject("EMP Ring");
 		var ind = go.AddComponent<AoEIndicator>();
 		return ind;
 	}
@@ -136,7 +136,7 @@ public class EarthbreakerSurge : MonoBehaviour
 		dt.Init(amount);
 	}
 
-	private int CalculateDamageFromClarity()
+	private int CalculateDamageFromFocus()
 	{
 		if (PlayerStats.Instance == null)
 		{
@@ -144,10 +144,10 @@ public class EarthbreakerSurge : MonoBehaviour
 			return damagePerRing;
 		}
 
-		float clarity = PlayerStats.Instance.CurrentClarity;
+		float focus = PlayerStats.Instance.CurrentFocus;
 		
-		// Linear scaling: base + factor * clarity
-		float scaled = damagePerRing + clarity * clarityToDamageFactor;
+		// Linear scaling: base + factor * focus
+		float scaled = damagePerRing + focus * focusToDamageFactor;
 		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
 		return finalDamage;
 	}

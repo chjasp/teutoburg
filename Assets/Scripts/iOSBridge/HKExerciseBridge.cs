@@ -1,9 +1,9 @@
 // HKExerciseBridge.cs
 using System.Runtime.InteropServices;
 using UnityEngine;
-using Teutoburg.Core;
+using Axiom.Core;
 
-namespace Teutoburg.Health
+namespace Axiom.Health
 {
 	// Persistent singleton receiver for iOS HealthKit Active Energy (Calories)
 	public class HKExerciseBridge : MonoBehaviour

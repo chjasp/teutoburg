@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// Runtime representation of an item created from an <see cref="ItemDefinition"/>.

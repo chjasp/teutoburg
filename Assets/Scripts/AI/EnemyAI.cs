@@ -26,7 +26,7 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private string castTriggerName = "CastSpell";
     [SerializeField] private string meleeTriggerName = "Melee";
     [SerializeField] private Animator animator;           // auto-find in children if not set
-    [SerializeField] private SpellCaster spellCaster;     // auto-find on this object if not set
+    [SerializeField] private Dynamo dynamo;               // auto-find on this object if not set
 
     private CharacterController controller;
     private float gravityVelocityY;
@@ -49,9 +49,9 @@ public class EnemyAI : MonoBehaviour
         {
             animator = GetComponentInChildren<Animator>();
         }
-        if (spellCaster == null)
+        if (dynamo == null)
         {
-            spellCaster = GetComponent<SpellCaster>();
+            dynamo = GetComponent<Dynamo>();
         }
     }
 
@@ -130,8 +130,8 @@ public class EnemyAI : MonoBehaviour
     {
         if (currentTarget == null) return;
 
-        // If we have a SpellCaster and an Animator, trigger the cast animation.
-        if (spellCaster != null && animator != null && !string.IsNullOrEmpty(castTriggerName))
+        // If we have a Dynamo and an Animator, trigger the cast animation.
+        if (dynamo != null && animator != null && !string.IsNullOrEmpty(castTriggerName))
         {
             animator.SetTrigger(castTriggerName);
             // The actual projectile spawn is driven by the Animation Event calling SpellEventProxy.SpawnProjectile

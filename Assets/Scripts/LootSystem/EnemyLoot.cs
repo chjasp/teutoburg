@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// Minimal enemy-side component holding a reference to a loot table and exposing loot generation API.

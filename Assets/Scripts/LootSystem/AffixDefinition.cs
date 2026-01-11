@@ -1,13 +1,13 @@
 using System;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// Defines a single affix that can roll on an item (e.g., +X% Damage, +Y Armor).
     /// Affixes are ScriptableObjects so designers can author them in the editor and reuse across items.
     /// </summary>
-    [CreateAssetMenu(menuName = "Teutoburg/Loot/Affix Definition", fileName = "AffixDefinition")]
+    [CreateAssetMenu(menuName = "Axiom/Loot/Affix Definition", fileName = "AffixDefinition")]
     public sealed class AffixDefinition : ScriptableObject
     {
         [Header("Identity")]

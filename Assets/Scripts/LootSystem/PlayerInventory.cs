@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// Simple player inventory storage for picked up items.

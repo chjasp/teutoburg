@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class LunarMoon : MonoBehaviour
+public class OrbitalDrone : MonoBehaviour
 {
 	[Header("Movement")]
 	[SerializeField] private float fallGravity = 30f;
@@ -20,7 +20,7 @@ public class LunarMoon : MonoBehaviour
 	private float verticalVelocity;
 	private bool hasImpacted;
 	private GameObject indicatorToDestroy;
-	private Transform ownerRoot; // who spawned this moon; ignored for damage
+	private Transform ownerRoot; // who spawned this drone; ignored for damage
 
 	public float Radius => radius;
 
@@ -107,5 +107,3 @@ public class LunarMoon : MonoBehaviour
 		Gizmos.DrawSphere(Application.isPlaying ? targetPoint : transform.position, radius);
 	}
 }
-
-

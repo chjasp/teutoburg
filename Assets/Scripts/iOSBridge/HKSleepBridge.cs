@@ -2,9 +2,9 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using Teutoburg.Core;
+using Axiom.Core;
 
-namespace Teutoburg.Health
+namespace Axiom.Health
 {
 	// Persistent singleton receiver for iOS HealthKit sleep analysis (yesterday's slept hours)
 	public class HKSleepBridge : MonoBehaviour

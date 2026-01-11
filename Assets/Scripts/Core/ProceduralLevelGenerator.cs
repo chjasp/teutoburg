@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace Teutoburg.Core
+namespace Axiom.Core
 {
     /// <summary>
     /// Endless runner style generator. Spawns floor chunks as player moves +Z (relative to this object).

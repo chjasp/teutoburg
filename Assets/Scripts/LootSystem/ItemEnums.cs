@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Teutoburg.Loot
+namespace Axiom.Loot
 {
     /// <summary>
     /// Defines the high-level type of an item (drives base stats semantics).

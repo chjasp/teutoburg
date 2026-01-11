@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace Teutoburg.Core
+namespace Axiom.Core
 {
     /// <summary>
-    /// Central manager for the Dual-Stat System: Fury (Calories) and Clarity (Sleep).
+    /// Central manager for the Dual-Stat System: Drive (Calories) and Focus (Sleep).
     /// Converts real-world health data into game attributes.
     /// </summary>
     public class PlayerStats : MonoBehaviour
@@ -33,16 +33,16 @@ namespace Teutoburg.Core
 
         [Header("Game Stats")]
         [Range(0, 100)]
-        [SerializeField] private float currentFury;
+        [SerializeField] private float currentDrive;
         [Range(0, 100)]
-        [SerializeField] private float currentClarity;
+        [SerializeField] private float currentFocus;
 
         [Header("Raw Data")]
         [SerializeField] private float lastCalories;
         [SerializeField] private float lastSleepSeconds;
 
-        public float CurrentFury => currentFury;
-        public float CurrentClarity => currentClarity;
+        public float CurrentDrive => currentDrive;
+        public float CurrentFocus => currentFocus;
 
         private void Awake()
         {
@@ -67,15 +67,15 @@ namespace Teutoburg.Core
             lastCalories = calories;
             lastSleepSeconds = sleepSeconds;
 
-            // Map 2000 calories to 100 Fury
+            // Map 2000 calories to 100 Drive
             // Formula: (calories / 2000) * 100, clamped to 0-100
-            currentFury = Mathf.Clamp((calories / 2000f) * 100f, 0f, 100f);
+            currentDrive = Mathf.Clamp((calories / 2000f) * 100f, 0f, 100f);
 
-            // Map 8 hours (28800 seconds) to 100 Clarity
+            // Map 8 hours (28800 seconds) to 100 Focus
             // Formula: (sleepSeconds / 28800) * 100, clamped to 0-100
-            currentClarity = Mathf.Clamp((sleepSeconds / 28800f) * 100f, 0f, 100f);
+            currentFocus = Mathf.Clamp((sleepSeconds / 28800f) * 100f, 0f, 100f);
 
-            Debug.Log($"[PlayerStats] Updated. Calories: {calories} -> Fury: {currentFury}. Sleep: {sleepSeconds}s -> Clarity: {currentClarity}.");
+            Debug.Log($"[PlayerStats] Updated. Calories: {calories} -> Drive: {currentDrive}. Sleep: {sleepSeconds}s -> Focus: {currentFocus}.");
         }
 
         /// <summary>

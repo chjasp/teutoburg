@@ -1,12 +1,12 @@
 using UnityEngine;
 
-namespace Teutoburg.Core
+namespace Axiom.Core
 {
     public enum GameState
     {
-        Hearth,
-        Hinterlands,
-        Abyss
+        Citadel,
+        Breach,
+        OccupiedSector
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ namespace Teutoburg.Core
 
         [Header("Progression")]
         [SerializeField] private int currentDepth = 0;
-        [SerializeField] private GameState currentState = GameState.Hearth;
+        [SerializeField] private GameState currentState = GameState.Citadel;
 
         public int CurrentDepth => currentDepth;
         public GameState CurrentState => currentState;
@@ -73,15 +73,15 @@ namespace Teutoburg.Core
         {
             if (currentDepth == 0)
             {
-                currentState = GameState.Hearth;
+                currentState = GameState.Citadel;
             }
             else if (currentDepth >= 1 && currentDepth < 10)
             {
-                currentState = GameState.Hinterlands;
+                currentState = GameState.Breach;
             }
             else
             {
-                currentState = GameState.Abyss;
+                currentState = GameState.OccupiedSector;
             }
         }
     }

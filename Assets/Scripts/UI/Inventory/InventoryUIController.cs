@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Teutoburg.Loot;
+using Axiom.Loot;
 using UnityEngine;
 using UnityEngine.UI;
 
