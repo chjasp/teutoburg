@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars and fill in your values
+
+project_id         = "steam-378309"
+region             = "europe-west1"    # Cloud Run location
+vertex_ai_location = "us-central1"     # Vertex AI location (best model availability)

@@ -14,6 +14,16 @@ public class CameraFollow : MonoBehaviour
     // This method is called after all Update functions have been called
     void LateUpdate()
     {
+        // Auto-find player if target is missing (handles scene reload)
+        if (target == null)
+        {
+            var player = FindFirstObjectByType<PlayerHealth>();
+            if (player != null)
+            {
+                target = player.transform;
+            }
+        }
+
         // Check if a target has been assigned
         if (target != null)
         {

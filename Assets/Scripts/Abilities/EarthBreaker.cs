@@ -6,7 +6,7 @@ using Axiom.Health;
 using Axiom.Core;
 
 [DisallowMultipleComponent]
-public class EMP : MonoBehaviour
+public class EarthBreaker : MonoBehaviour
 {
 	[Header("Setup")]
 	[SerializeField] private Transform origin; // where the pulse originates (defaults to this.transform)
@@ -35,19 +35,19 @@ public class EMP : MonoBehaviour
 	}
 
 	// UI Button-friendly entry point
-	public void CastEMP()
+	public void CastEarthBreaker()
 	{
-		StartCoroutine(EMPRoutine());
+		StartCoroutine(EarthBreakerRoutine());
 	}
 
 	// Input System callback-friendly wrapper (optional)
-	public void OnCastEMP(InputAction.CallbackContext ctx)
+	public void OnCastEarthBreaker(InputAction.CallbackContext ctx)
 	{
 		if (!ctx.performed) return;
-		CastEMP();
+		CastEarthBreaker();
 	}
 
-	private IEnumerator EMPRoutine()
+	private IEnumerator EarthBreakerRoutine()
 	{
 		Vector3 center = origin != null ? origin.position : transform.position;
 		center.y += 0.02f; // slight lift to avoid Z-fighting for visuals
@@ -123,7 +123,7 @@ public class EMP : MonoBehaviour
 			return Instantiate(ringIndicatorPrefab);
 		}
 		// Minimal runtime-created indicator if no prefab was assigned
-		var go = new GameObject("EMP Ring");
+		var go = new GameObject("Earth Breaker Ring");
 		var ind = go.AddComponent<AoEIndicator>();
 		return ind;
 	}

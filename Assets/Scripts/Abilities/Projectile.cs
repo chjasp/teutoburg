@@ -39,7 +39,7 @@ public class Projectile : MonoBehaviour
         Debug.Log($"[Projectile] OnDestroy() called - hasExploded: {hasExploded}, lifeTimer: {lifeTimer:F2}s");
     }
 
-    // Called by Dynamo right after Instantiate
+    // Called by Heartfire right after Instantiate
     public void Init(Vector3 dir, float spd)
     {
         direction = dir.normalized;

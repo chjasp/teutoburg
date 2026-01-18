@@ -7,10 +7,10 @@ using System.Reflection;
 using System.Globalization;
 
 [DisallowMultipleComponent]
-public class OrbitalStrike : MonoBehaviour
+public class LunarReckoning : MonoBehaviour
 {
 	[Header("Setup")]
-	[SerializeField] private OrbitalDrone dronePrefab;
+	[SerializeField] private Moonfall moonfallPrefab;
 	[SerializeField] private Transform aimCamera; // used for screen-to-world ray
 
 	[Header("Targeting")]
@@ -37,7 +37,7 @@ public class OrbitalStrike : MonoBehaviour
 	}
 
 	// Hook this from the Input System (performed on tap/click)
-	public void OnCastOrbitalStrike(InputAction.CallbackContext ctx)
+	public void OnCastLunarReckoning(InputAction.CallbackContext ctx)
 	{
 		if (!ctx.performed) return;
 		StartTargeting();
@@ -57,12 +57,12 @@ public class OrbitalStrike : MonoBehaviour
 
 	public bool TryCastAtPointer()
 	{
-		if (dronePrefab == null || aimCamera == null) return false;
+		if (moonfallPrefab == null || aimCamera == null) return false;
 
 		Vector3 target;
 		if (!TryGetGroundPointFromPointer(out target)) return false;
 
-		SpawnDroneAt(target);
+		SpawnMoonfallAt(target);
 		return true;
 	}
 
@@ -83,8 +83,8 @@ public class OrbitalStrike : MonoBehaviour
 		if (TryGetGroundTap(out point))
 		{
 			awaitingGroundSelection = false;
-			// Don't hide indicator - the drone will destroy it on impact
-			SpawnDroneAt(point);
+			// Don't hide indicator - the moonfall will destroy it on impact
+			SpawnMoonfallAt(point);
 			return; // Exit early, don't process hover logic
 		}
 		
@@ -220,19 +220,19 @@ public class OrbitalStrike : MonoBehaviour
 		return EventSystem.current.IsPointerOverGameObject(pointerId);
 	}
 
-	private void SpawnDroneAt(Vector3 groundPoint)
+	private void SpawnMoonfallAt(Vector3 groundPoint)
 	{
-		if (dronePrefab == null)
+		if (moonfallPrefab == null)
 		{
-			Debug.LogWarning("[OrbitalStrike] dronePrefab is not assigned!");
+			Debug.LogWarning("[LunarReckoning] moonfallPrefab is not assigned!");
 			return;
 		}
-		var drone = Instantiate(dronePrefab);
-		drone.SetOwner(transform);
-		drone.InitAtTarget(groundPoint, CalculateDamageFromFocus());
+		var moonfall = Instantiate(moonfallPrefab);
+		moonfall.SetOwner(transform);
+		moonfall.InitAtTarget(groundPoint, CalculateDamageFromFocus());
 		if (activeIndicator != null)
 		{
-			drone.SetIndicatorToDestroy(activeIndicator.gameObject);
+			moonfall.SetIndicatorToDestroy(activeIndicator.gameObject);
 			activeIndicator = null;
 		}
 	}
@@ -278,7 +278,7 @@ public class OrbitalStrike : MonoBehaviour
 			activeIndicator.useWorldSpace = true;
 		}
 		activeIndicator.enabled = true;
-		float radius = dronePrefab != null ? dronePrefab.Radius : 3.5f;
+		float radius = moonfallPrefab != null ? moonfallPrefab.Radius : 3.5f;
 		int segments = Mathf.Max(32, activeIndicator.positionCount > 0 ? activeIndicator.positionCount : 48);
 		activeIndicator.positionCount = segments;
 		float angleStep = Mathf.PI * 2f / segments;
