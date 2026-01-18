@@ -1,4 +1,3 @@
-/* TopDownMover.cs */
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,12 +20,20 @@ public class TopDownMover : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext ctx)
     {
-        Debug.Log("OnMove: " + ctx.ReadValue<Vector2>());
         move = ctx.ReadValue<Vector2>(); // (-1..1, -1..1)
     }
 
     void Update()
     {
+        // Ensure camera reference is valid (handles scene reload timing)
+        if (cameraTransform == null)
+        {
+            if (Camera.main != null)
+                cameraTransform = Camera.main.transform;
+            else
+                return; // Can't move without camera reference
+        }
+
         // Project camera forward/right onto XZ so motion is camera-relative.
         Vector3 camFwd = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
         Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right,  Vector3.up).normalized;

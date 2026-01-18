@@ -1,7 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// Moonfall - A shard of lunar energy that descends from the heavens,
+/// dealing devastating area damage on impact.
+/// Spawned by LunarReckoning.
+/// </summary>
 [DisallowMultipleComponent]
-public class OrbitalDrone : MonoBehaviour
+public class Moonfall : MonoBehaviour
 {
 	[Header("Movement")]
 	[SerializeField] private float fallGravity = 30f;
@@ -20,7 +25,7 @@ public class OrbitalDrone : MonoBehaviour
 	private float verticalVelocity;
 	private bool hasImpacted;
 	private GameObject indicatorToDestroy;
-	private Transform ownerRoot; // who spawned this drone; ignored for damage
+	private Transform ownerRoot; // who spawned this; ignored for damage
 
 	public float Radius => radius;
 

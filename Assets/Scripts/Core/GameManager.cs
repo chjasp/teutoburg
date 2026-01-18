@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Axiom.Core
 {
@@ -22,12 +24,16 @@ namespace Axiom.Core
             }
         }
 
+        private bool isResetting;
+        private string sceneToLoad;
+
         private void Awake()
         {
             if (_instance == null)
             {
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
+                SceneManager.sceneLoaded += OnSceneLoaded;
             }
             else if (_instance != this)
             {
@@ -35,13 +41,42 @@ namespace Axiom.Core
             }
         }
 
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            isResetting = false;
+        }
+
         /// <summary>
-        /// Resets the current run state.
+        /// Resets the current run by reloading the active scene.
         /// </summary>
         public void ResetRun()
         {
-            // Placeholder for future run-reset logic (respawn, stats reset, etc.)
-            Debug.Log("[GameManager] Run reset.");
+            if (isResetting) return;
+            isResetting = true;
+            sceneToLoad = SceneManager.GetActiveScene().name;
+            StartCoroutine(ResetRunCoroutine());
+        }
+
+        private IEnumerator ResetRunCoroutine()
+        {
+            yield return null;
+            
+            // Destroy player and stop animator to prevent animation events on destroyed object
+            var players = FindObjectsByType<PlayerHealth>(FindObjectsSortMode.None);
+            foreach (var player in players)
+            {
+                var animator = player.GetComponentInChildren<Animator>();
+                if (animator != null) animator.enabled = false;
+                Destroy(player.gameObject);
+            }
+            
+            yield return null;
+            SceneManager.LoadScene(sceneToLoad);
         }
     }
 }

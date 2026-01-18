@@ -73,6 +73,18 @@ public class HealthBarUI : MonoBehaviour
 
     private void Update()
     {
+        // Re-acquire player reference if lost (handles scene reload)
+        if (playerHealth == null)
+        {
+            playerHealth = FindFirstObjectByType<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerHealth.OnHealthChanged += HandleHealthChanged;
+                playerHealth.OnDied += HandleDied;
+                InitializeFromCurrentHealth();
+            }
+        }
+
         if (updateEveryFrameIfNoEvents && playerHealth != null)
         {
             UpdateFill(playerHealth.CurrentHealth, playerHealth.MaxHealth);
@@ -98,9 +110,6 @@ public class HealthBarUI : MonoBehaviour
     private void UpdateFill(int current, int max)
     {
         if (fillImage == null || max <= 0) return;
-        float normalized = Mathf.Clamp01(max == 0 ? 0f : (float)current / max);
-        fillImage.fillAmount = normalized;
+        fillImage.fillAmount = Mathf.Clamp01((float)current / max);
     }
 }
-
-

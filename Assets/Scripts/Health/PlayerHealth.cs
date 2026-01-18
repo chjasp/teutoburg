@@ -1,5 +1,5 @@
-using System;
 using UnityEngine;
+using Axiom.Core;
 
 [DisallowMultipleComponent]
 public class PlayerHealth : HealthBase
@@ -32,16 +32,24 @@ public class PlayerHealth : HealthBase
 
     protected override void OnDeathStart()
     {
+        // Disable movement and attacks
         var mover = GetComponent<TopDownMover>();
         if (mover != null) mover.enabled = false;
         var controller = GetComponent<CharacterController>();
         if (controller != null) controller.enabled = false;
+        var melee = GetComponent<PlayerMelee>();
+        if (melee != null) melee.enabled = false;
+        
+        // Disable ability scripts
+        foreach (var ability in GetComponents<MonoBehaviour>())
+        {
+            if (ability is Heartfire || ability.GetType().Name.Contains("Ability"))
+                ability.enabled = false;
+        }
     }
 
     protected override void OnDeathFinalize()
     {
-        // Player: keep object alive by default (no destroy)
+        GameManager.Instance.ResetRun();
     }
 }
-
-

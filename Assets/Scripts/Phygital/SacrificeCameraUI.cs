@@ -25,6 +25,13 @@ namespace Axiom.Phygital
         [Tooltip("Optional: Button to close the camera without capturing.")]
         [SerializeField] private Button _closeButton;
 
+        [Header("Processing UI")]
+        [Tooltip("Optional: Text to show while analyzing the image.")]
+        [SerializeField] private GameObject _processingIndicator;
+
+        [Tooltip("Optional: Text to show the result.")]
+        [SerializeField] private TMPro.TextMeshProUGUI _resultText;
+
         [Header("Settings")]
         [Tooltip("Time in seconds before auto-closing after capture.")]
         [SerializeField] private float _autoCloseDelay = 2f;
@@ -37,6 +44,13 @@ namespace Axiom.Phygital
 
         [Tooltip("Target framerate for the camera feed.")]
         [SerializeField] private int _requestedFPS = 30;
+
+        [Header("Integration")]
+        [Tooltip("Reference to the FoodAnalysisAPI. Auto-finds if not set.")]
+        [SerializeField] private FoodAnalysisAPI _foodAnalysisAPI;
+
+        [Tooltip("Reference to the SacrificeBuffEffect. Auto-finds if not set.")]
+        [SerializeField] private SacrificeBuffEffect _buffEffect;
 
         private WebCamTexture _webCamTexture;
         private Action _onCloseCallback;
@@ -53,6 +67,22 @@ namespace Axiom.Phygital
             if (_cameraPanel != null)
             {
                 _cameraPanel.SetActive(false);
+            }
+
+            // Hide processing indicator
+            if (_processingIndicator != null)
+            {
+                _processingIndicator.SetActive(false);
+            }
+
+            // Auto-find dependencies if not set
+            if (_foodAnalysisAPI == null)
+            {
+                _foodAnalysisAPI = FindAnyObjectByType<FoodAnalysisAPI>();
+            }
+            if (_buffEffect == null)
+            {
+                _buffEffect = FindAnyObjectByType<SacrificeBuffEffect>();
             }
 
             // Hook up buttons
@@ -251,11 +281,106 @@ namespace Axiom.Phygital
             // Log the sacrifice acceptance
             Debug.Log($"SACRIFICE ACCEPTED: {timestamp} - Resolution {width}x{height}");
 
+            // Show processing indicator
+            if (_processingIndicator != null)
+            {
+                _processingIndicator.SetActive(true);
+            }
+            UpdateResultText("Analyzing offering...");
+
+            // Create texture from webcam for API
+            Texture2D capturedTexture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            capturedTexture.SetPixels(_webCamTexture.GetPixels());
+            capturedTexture.Apply();
+
+            // Send to API if available
+            FoodAnalysisResponse analysisResult = null;
+            bool apiComplete = false;
+
+            if (_foodAnalysisAPI != null)
+            {
+                _foodAnalysisAPI.AnalyzeFood(capturedTexture, (response) =>
+                {
+                    analysisResult = response;
+                    apiComplete = true;
+                });
+
+                // Wait for API response (with timeout)
+                float timeout = 30f;
+                float elapsed = 0f;
+                while (!apiComplete && elapsed < timeout)
+                {
+                    elapsed += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (!apiComplete)
+                {
+                    Debug.LogWarning("[SacrificeCameraUI] API request timed out.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[SacrificeCameraUI] FoodAnalysisAPI not found, skipping analysis.");
+                apiComplete = true;
+            }
+
+            // Clean up captured texture
+            Destroy(capturedTexture);
+
+            // Hide processing indicator
+            if (_processingIndicator != null)
+            {
+                _processingIndicator.SetActive(false);
+            }
+
+            // Process the result
+            if (analysisResult != null)
+            {
+                Debug.Log($"[SacrificeCameraUI] Analysis result - Score: {analysisResult.score:F2}, Category: {analysisResult.category}, Reasoning: {analysisResult.reasoning}");
+                
+                // Show result to user
+                UpdateResultText($"{GetCategorySymbol(analysisResult.category)} {analysisResult.category.ToUpper()}\n{analysisResult.reasoning}");
+
+                // Trigger visual buff effect
+                if (_buffEffect != null)
+                {
+                    _buffEffect.TriggerEffect(analysisResult.score, analysisResult.category);
+                }
+            }
+            else
+            {
+                UpdateResultText("Could not analyze offering.\nPlease try again.");
+            }
+
             // Wait before auto-closing
             yield return new WaitForSeconds(_autoCloseDelay);
 
             // Close the camera UI
             CloseCamera();
+        }
+
+        private void UpdateResultText(string message)
+        {
+            if (_resultText != null)
+            {
+                _resultText.text = message;
+            }
+        }
+
+        private string GetCategorySymbol(string category)
+        {
+            // Using ASCII-compatible symbols that work with standard fonts
+            return category?.ToLower() switch
+            {
+                "excellent" => "[+++]",
+                "good" => "[++]",
+                "moderate" => "[+]",
+                "poor" => "[-]",
+                "unhealthy" => "[--]",
+                "error" => "[!]",
+                _ => "[?]"
+            };
         }
 
         private void StopCamera()
