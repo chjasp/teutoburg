@@ -7,6 +7,8 @@ public abstract class HealthBase : MonoBehaviour, IHealth, IDamageable
     [Header("Health")]
     [SerializeField] private int maxHealth = 100;
 
+    private int _baseMaxHealth; // Original max health before multipliers
+
     [Header("VFX/Animation (optional)")]
     [SerializeField] private GameObject deathVfxPrefab;
     [SerializeField] private string deathTriggerName = "Death";
@@ -34,8 +36,27 @@ public abstract class HealthBase : MonoBehaviour, IHealth, IDamageable
         {
             animator = GetComponentInChildren<Animator>();
         }
+        
+        // Store base max health if not already set by a multiplier
+        if (_baseMaxHealth <= 0)
+        {
+            _baseMaxHealth = maxHealth;
+        }
+        
         currentHealth = Mathf.Max(1, maxHealth);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    /// <summary>
+    /// Applies a multiplier to the max health. Must be called before Awake initializes health.
+    /// </summary>
+    protected void SetMaxHealthMultiplier(float multiplier)
+    {
+        if (_baseMaxHealth <= 0)
+        {
+            _baseMaxHealth = maxHealth;
+        }
+        maxHealth = Mathf.RoundToInt(_baseMaxHealth * multiplier);
     }
 
     public virtual void TakeDamage(int amount)
@@ -123,6 +144,30 @@ public abstract class HealthBase : MonoBehaviour, IHealth, IDamageable
     public void FinalizeDeath()
     {
         OnDeathFinalize();
+    }
+
+    public void RestoreFullHealth()
+    {
+        if (isDead) return;
+        currentHealth = maxHealth;
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    public void SetMaxHealth(int newMax, bool resetCurrentHealth = true)
+    {
+        if (isDead) return;
+        newMax = Mathf.Max(1, newMax);
+        _baseMaxHealth = newMax;
+        maxHealth = newMax;
+        if (resetCurrentHealth)
+        {
+            currentHealth = maxHealth;
+        }
+        else
+        {
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        }
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     protected virtual void OnDeathFinalize()

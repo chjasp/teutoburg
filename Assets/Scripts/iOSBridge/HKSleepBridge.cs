@@ -6,7 +6,10 @@ using Axiom.Core;
 
 namespace Axiom.Health
 {
-	// Persistent singleton receiver for iOS HealthKit sleep analysis (yesterday's slept hours)
+	/// <summary>
+	/// Persistent singleton receiver for iOS HealthKit sleep analysis.
+	/// Fetches the 7-day average sleep hours for Focus stat calculation.
+	/// </summary>
 	public class HKSleepBridge : MonoBehaviour
 	{
 		private const string GameObjectName = "HKSleepBridge";
@@ -14,20 +17,22 @@ namespace Axiom.Health
 
 		private static HKSleepBridge _instance;
 
-		// Last retrieved sleep duration in hours for yesterday. Negative means unknown/not fetched.
-		public static float YesterdaySleepHours { get; private set; } = -1f;
+		/// <summary>
+		/// Average sleep duration in hours over the last 7 days. Negative means unknown/not fetched.
+		/// </summary>
+		public static float WeeklyAverageSleepHours { get; private set; } = -1f;
 
 		// Simple status string for debugging UI/logs
 		public static string LastStatus { get; private set; } = "NotRequested";
 
 #if UNITY_IOS && !UNITY_EDITOR
 		[DllImport("__Internal")]
-		private static extern void HKSleep_RequestYesterdayHours(string gameObjectName, string callbackMethod);
+		private static extern void HKSleep_RequestWeeklyAverageHours(string gameObjectName, string callbackMethod);
 #else
-		private static void HKSleep_RequestYesterdayHours(string gameObjectName, string callbackMethod)
+		private static void HKSleep_RequestWeeklyAverageHours(string gameObjectName, string callbackMethod)
 		{
-			// Editor/other platforms: simulate 7.5 hours for easy testing
-			Debug.Log($"[HKSleepBridge] Simulating sleep hours in editor for {gameObjectName}.{callbackMethod}");
+			// Editor/other platforms: simulate 7.5 hours average for easy testing
+			Debug.Log($"[HKSleepBridge] Simulating 7-day average sleep hours in editor for {gameObjectName}.{callbackMethod}");
 			var go = GameObject.Find(gameObjectName);
 			go?.SendMessage(callbackMethod, "7.5");
 		}
@@ -42,18 +47,21 @@ namespace Axiom.Health
 			_instance = go.AddComponent<HKSleepBridge>();
 		}
 
-		public static void RequestYesterdaySleepHours()
+		/// <summary>
+		/// Requests the 7-day average sleep hours from HealthKit.
+		/// </summary>
+		public static void RequestWeeklyAverageSleepHours()
 		{
 			LastStatus = "Requesting";
-			HKSleep_RequestYesterdayHours(GameObjectName, CallbackMethod);
+			HKSleep_RequestWeeklyAverageHours(GameObjectName, CallbackMethod);
 		}
 
 		private void Awake()
 		{
 			// Trigger an early authorization/request so the system prompt appears at startup
-			if (YesterdaySleepHours < 0f && LastStatus == "NotRequested")
+			if (WeeklyAverageSleepHours < 0f && LastStatus == "NotRequested")
 			{
-				RequestYesterdaySleepHours();
+				RequestWeeklyAverageSleepHours();
 			}
 		}
 
@@ -75,9 +83,9 @@ namespace Axiom.Health
 
 			if (float.TryParse(message, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var hours))
 			{
-				YesterdaySleepHours = hours;
+				WeeklyAverageSleepHours = hours;
 				LastStatus = "OK";
-				Debug.Log($"[HKSleepBridge] Yesterday sleep hours: {YesterdaySleepHours}");
+				Debug.Log($"[HKSleepBridge] 7-day average sleep hours: {WeeklyAverageSleepHours}");
 
 				// Update PlayerStats (convert hours to seconds)
 				if (PlayerStats.Instance != null)

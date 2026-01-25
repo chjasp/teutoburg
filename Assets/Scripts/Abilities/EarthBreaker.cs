@@ -22,7 +22,10 @@ public class EarthBreaker : MonoBehaviour
 
 	[Header("Damage")]
 	[SerializeField] private int damagePerRing = 150; // baseline
-	[SerializeField] private float focusToDamageFactor = 2f; // e.g., 100 Focus => +200 dmg per ring
+	[SerializeField] private float focusToDamageFactor = 1f; // 100 Focus => 100 dmg per ring
+
+	[Header("Crowd Control")]
+	[SerializeField] private float stunDurationSeconds = 3f;
 
 	[Header("Visuals (optional)")]
 	[SerializeField] private AoEIndicator ringIndicatorPrefab; // optional; created at runtime if not set
@@ -105,6 +108,11 @@ public class EarthBreaker : MonoBehaviour
 					{
 						damageable.TakeDamage(ringDamage);
 						ShowDamageText(col, ringDamage);
+						var ai = col.GetComponentInParent<EnemyAI>();
+						if (ai != null)
+						{
+							ai.Stun(stunDurationSeconds);
+						}
 						alreadyHitThisRing.Add(col);
 					}
 				}
@@ -138,17 +146,7 @@ public class EarthBreaker : MonoBehaviour
 
 	private int CalculateDamageFromFocus()
 	{
-		if (PlayerStats.Instance == null)
-		{
-			// Fallback if PlayerStats is missing
-			return damagePerRing;
-		}
-
-		float focus = PlayerStats.Instance.CurrentFocus;
-		
-		// Linear scaling: base + factor * focus
-		float scaled = damagePerRing + focus * focusToDamageFactor;
-		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
-		return finalDamage;
+		float focus = CombatTuning.GetFocus();
+		return CombatTuning.CalculateStatScaledDamage(focus, damagePerRing, focusToDamageFactor);
 	}
 }

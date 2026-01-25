@@ -40,9 +40,11 @@ namespace Axiom.Core
         [Header("Raw Data")]
         [SerializeField] private float lastCalories;
         [SerializeField] private float lastSleepSeconds;
+        [SerializeField] private bool hasData;
 
         public float CurrentDrive => currentDrive;
         public float CurrentFocus => currentFocus;
+        public bool HasData => hasData;
 
         private void Awake()
         {
@@ -66,6 +68,7 @@ namespace Axiom.Core
         {
             lastCalories = calories;
             lastSleepSeconds = sleepSeconds;
+            hasData = true;
 
             // Map 2000 calories to 100 Drive
             // Formula: (calories / 2000) * 100, clamped to 0-100
@@ -95,4 +98,3 @@ namespace Axiom.Core
         }
     }
 }
-

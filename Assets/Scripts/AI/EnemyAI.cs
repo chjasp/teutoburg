@@ -35,10 +35,13 @@ public class EnemyAI : MonoBehaviour
     private Transform currentTarget;
     private float scanTimer;
     private bool isAggroed;
+    private int baseAttackDamage;
+    private float stunnedUntil;
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
+        baseAttackDamage = attackDamage;
         if (player == null)
         {
             var playerGo = GameObject.FindGameObjectWithTag(playerTag);
@@ -55,8 +58,26 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    public int BaseAttackDamage => baseAttackDamage;
+
+    public void SetAttackDamage(int value)
+    {
+        attackDamage = Mathf.Max(0, value);
+    }
+
     void Update()
     {
+        if (IsStunned)
+        {
+            gravityVelocityY += Physics.gravity.y * Time.deltaTime;
+            var stunFlags = controller.Move(new Vector3(0f, gravityVelocityY, 0f) * Time.deltaTime);
+            if ((stunFlags & CollisionFlags.Below) != 0 && gravityVelocityY < 0f)
+            {
+                gravityVelocityY = -0.5f;
+            }
+            return;
+        }
+
         // Regularly reacquire best target (Player only)
         scanTimer += Time.deltaTime;
         if (currentTarget == null || scanTimer >= rescanInterval)
@@ -128,6 +149,7 @@ public class EnemyAI : MonoBehaviour
 
     private void PerformAttack()
     {
+        if (IsStunned) return;
         if (currentTarget == null) return;
 
         // If we have a Heartfire and an Animator, trigger the cast animation.
@@ -157,6 +179,7 @@ public class EnemyAI : MonoBehaviour
     // Called by MeleeEventProxy from an Animation Event at the strike frame
     public void OnMeleeStrikeEvent()
     {
+        if (IsStunned) return;
         var target = lastAttackTarget != null ? lastAttackTarget : (currentTarget != null ? currentTarget : null);
         if (target == null) return;
 
@@ -214,6 +237,18 @@ public class EnemyAI : MonoBehaviour
         if (currentTarget == null)
         {
             AcquireTarget();
+        }
+    }
+
+    public bool IsStunned => Time.time < stunnedUntil;
+
+    public void Stun(float seconds)
+    {
+        if (seconds <= 0f) return;
+        float until = Time.time + seconds;
+        if (until > stunnedUntil)
+        {
+            stunnedUntil = until;
         }
     }
 }

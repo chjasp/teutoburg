@@ -52,6 +52,7 @@
     <Compile Include="Assets/Scripts/AI/EnemyAI.cs" />
     <Compile Include="Assets/Scripts/Core/PlayerStats.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
+    <Compile Include="Assets/Scripts/UI/LevelUI.cs" />
     <Compile Include="Assets/Scripts/Abilities/LunarReckoning.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerActions.cs" />
     <Compile Include="Assets/Scripts/Abilities/Heartfire.cs" />
@@ -82,16 +83,20 @@
     <Compile Include="Assets/Scripts/iOSBridge/HKExerciseBridge.cs" />
     <Compile Include="Assets/Scripts/UI/DamageText.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
+    <Compile Include="Assets/Scripts/Core/SceneReloadFixer.cs" />
     <Compile Include="Assets/Scripts/Core/DifficultyScaler.cs" />
     <Compile Include="Assets/Scripts/LootSystem/WorldItemPickup.cs" />
+    <Compile Include="Assets/Scripts/Core/CombatTuning.cs" />
     <Compile Include="Assets/Scripts/Abilities/EarthBreaker.cs" />
     <Compile Include="Assets/Scripts/Phygital/SacrificeBuffEffect.cs" />
+    <Compile Include="Assets/Scripts/Core/LevelManager.cs" />
     <Compile Include="Assets/Scripts/Phygital/AltarInteraction.cs" />
     <Compile Include="Assets/Scripts/UI/Inventory/EquipmentPanelUI.cs" />
     <Compile Include="Assets/Scripts/Core/GameManager.cs" />
     <Compile Include="Assets/Scripts/LootSystem/LootDropper.cs" />
     <Compile Include="Assets/Scripts/UI/WorldSpaceHealthBarUI.cs" />
     <Compile Include="Assets/Scripts/Abilities/Projectile.cs" />
+    <Compile Include="Assets/Scripts/UI/PlayerActionButtonBinder.cs" />
     <Compile Include="Assets/Scripts/LootSystem/EnemyLoot.cs" />
     <Compile Include="Assets/Scripts/LootSystem/PlayerInventory.cs" />
   </ItemGroup>
