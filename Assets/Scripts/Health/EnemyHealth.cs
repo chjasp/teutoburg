@@ -1,9 +1,58 @@
 using System;
 using UnityEngine;
+using Axiom.Core;
 
 [DisallowMultipleComponent]
 public class EnemyHealth : HealthBase
 {
+    [Header("Tier")]
+    [SerializeField] private EnemyTier tier = EnemyTier.Medium;
+    [SerializeField] private bool useAssignedTier = false;
+
+    private int baseMaxHealth;
+
+    public EnemyTier Tier => tier;
+    public bool UseAssignedTier => useAssignedTier;
+    public EnemyTier AssignedTier => tier;
+
+    protected override void Awake()
+    {
+        baseMaxHealth = MaxHealth;
+        // Apply level-based health multiplier before base.Awake() initializes health
+        ApplyLevelHealthMultiplier();
+        
+        base.Awake();
+        
+        // Register with LevelManager
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.RegisterEnemy();
+        }
+    }
+
+    public void ApplyTierAndStats(EnemyTier newTier, float levelHealthMultiplier, int level)
+    {
+        tier = newTier;
+        int finalHealth = CombatTuning.GetEnemyMaxHealth(tier, baseMaxHealth, levelHealthMultiplier);
+        SetMaxHealth(finalHealth, true);
+
+        var ai = GetComponent<EnemyAI>();
+        if (ai != null)
+        {
+            int finalDamage = CombatTuning.GetEnemyAttackDamage(tier, ai.BaseAttackDamage, level);
+            ai.SetAttackDamage(finalDamage);
+        }
+    }
+
+    private void ApplyLevelHealthMultiplier()
+    {
+        if (LevelManager.Instance != null)
+        {
+            float multiplier = LevelManager.Instance.GetHealthMultiplier();
+            SetMaxHealthMultiplier(multiplier);
+        }
+    }
+
     protected override void OnAfterDamageTaken(int damageAmount)
     {
         base.OnAfterDamageTaken(damageAmount);
@@ -21,7 +70,11 @@ public class EnemyHealth : HealthBase
         if (ai != null) ai.enabled = false;
         var controller = GetComponent<CharacterController>();
         if (controller != null) controller.enabled = false;
+        
+        // Unregister from LevelManager
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.UnregisterEnemy();
+        }
     }
 }
-
-

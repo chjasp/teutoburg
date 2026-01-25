@@ -155,13 +155,7 @@ public class Heartfire : MonoBehaviour
 
     private int CalculateDamageFromDrive()
     {
-        if (PlayerStats.Instance == null)
-        {
-            return baseDamage;
-        }
-
-        float drive = PlayerStats.Instance.CurrentDrive;
-        float scaled = baseDamage + drive * driveToDamageFactor;
-        return Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
+        float drive = CombatTuning.GetDrive();
+        return CombatTuning.CalculateStatScaledDamage(drive, baseDamage, driveToDamageFactor);
     }
 }

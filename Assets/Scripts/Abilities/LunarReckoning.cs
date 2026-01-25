@@ -21,8 +21,8 @@ public class LunarReckoning : MonoBehaviour
 	private LineRenderer activeIndicator;
 
 	[Header("Damage")]
-	[SerializeField] private int baseDamage = 250;
-	[SerializeField] private float focusToDamageFactor = 5f; // e.g., 100 Focus => +500 damage
+	[SerializeField] private int baseDamage = 0;
+	[SerializeField] private float focusToDamageFactor = 1f; // 100 Focus (8h sleep) => 100 damage
 
 	// Targeting state
 	private bool awaitingGroundSelection;
@@ -30,10 +30,7 @@ public class LunarReckoning : MonoBehaviour
 
 	void Awake()
 	{
-		if (aimCamera == null && Camera.main != null)
-		{
-			aimCamera = Camera.main.transform;
-		}
+		ResolveAimCamera();
 	}
 
 	// Hook this from the Input System (performed on tap/click)
@@ -51,13 +48,16 @@ public class LunarReckoning : MonoBehaviour
 
 	private void StartTargeting()
 	{
+		// Ensure we have a valid camera after scene reloads
+		ResolveAimCamera();
 		awaitingGroundSelection = true;
 		targetingFrameCount = 0;
 	}
 
 	public bool TryCastAtPointer()
 	{
-		if (moonfallPrefab == null || aimCamera == null) return false;
+		if (moonfallPrefab == null) return false;
+		if (ResolveAimCamera() == null) return false;
 
 		Vector3 target;
 		if (!TryGetGroundPointFromPointer(out target)) return false;
@@ -110,7 +110,7 @@ public class LunarReckoning : MonoBehaviour
 	private bool TryGetActivePointerPosition(out Vector3 point)
 	{
 		point = default;
-		Camera cam = aimCamera != null ? aimCamera.GetComponent<Camera>() : Camera.main;
+		Camera cam = ResolveAimCamera();
 		if (cam == null)
 		{
 			return false;
@@ -200,8 +200,7 @@ public class LunarReckoning : MonoBehaviour
 	private bool RaycastFromScreen(Vector2 screenPos, out Vector3 point)
 	{
 		point = default;
-		var cam = aimCamera.GetComponent<Camera>();
-		if (cam == null) cam = Camera.main;
+		Camera cam = ResolveAimCamera();
 		if (cam == null) return false;
 
 		Ray ray = cam.ScreenPointToRay(screenPos);
@@ -218,6 +217,30 @@ public class LunarReckoning : MonoBehaviour
 	{
 		if (EventSystem.current == null) return false;
 		return EventSystem.current.IsPointerOverGameObject(pointerId);
+	}
+
+	private Camera ResolveAimCamera()
+	{
+		if (aimCamera == null)
+		{
+			if (Camera.main != null)
+			{
+				aimCamera = Camera.main.transform;
+			}
+		}
+
+		if (aimCamera == null)
+		{
+			return null;
+		}
+
+		var cam = aimCamera.GetComponent<Camera>();
+		if (cam == null && Camera.main != null)
+		{
+			cam = Camera.main;
+			aimCamera = cam.transform;
+		}
+		return cam;
 	}
 
 	private void SpawnMoonfallAt(Vector3 groundPoint)
@@ -239,16 +262,8 @@ public class LunarReckoning : MonoBehaviour
 
 	private int CalculateDamageFromFocus()
 	{
-		if (PlayerStats.Instance == null)
-		{
-			return baseDamage;
-		}
-		
-		float focus = PlayerStats.Instance.CurrentFocus;
-
-		float scaled = baseDamage + focus * focusToDamageFactor;
-		int finalDamage = Mathf.Clamp(Mathf.RoundToInt(scaled), 0, 100000);
-		return finalDamage;
+		float focus = CombatTuning.GetFocus();
+		return CombatTuning.CalculateStatScaledDamage(focus, baseDamage, focusToDamageFactor);
 	}
 
 	private static float ConvertToFloat(object value)

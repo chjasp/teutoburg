@@ -53,11 +53,19 @@ namespace Axiom.Core
 
         /// <summary>
         /// Resets the current run by reloading the active scene.
+        /// Also resets level progression back to level 1.
         /// </summary>
         public void ResetRun()
         {
             if (isResetting) return;
             isResetting = true;
+            
+            // Reset level progression when restarting
+            if (LevelManager.Instance != null)
+            {
+                LevelManager.Instance.ResetLevels();
+            }
+            
             sceneToLoad = SceneManager.GetActiveScene().name;
             StartCoroutine(ResetRunCoroutine());
         }
