@@ -20,6 +20,7 @@ public sealed class InventoryUIController : MonoBehaviour
     [Header("Panels")]
     [SerializeField] private ItemDetailPanelUI detailPanel;
     [SerializeField] private EquipmentPanelUI equipmentPanel;
+    [SerializeField] private GameObject[] hideWhileOpen;
 
     void Awake()
     {
@@ -47,6 +48,7 @@ public sealed class InventoryUIController : MonoBehaviour
             equipmentPanel.Initialize(equipment);
         }
         RefreshList();
+        SetHiddenObjects(true);
     }
 
     void OnDisable()
@@ -55,6 +57,18 @@ public sealed class InventoryUIController : MonoBehaviour
         {
             playerInventory.OnItemAdded -= HandleInventoryChanged;
             playerInventory.OnItemRemoved -= HandleInventoryChanged;
+        }
+        SetHiddenObjects(false);
+    }
+
+    private void SetHiddenObjects(bool inventoryOpen)
+    {
+        if (hideWhileOpen == null) return;
+        for (int i = 0; i < hideWhileOpen.Length; i++)
+        {
+            var go = hideWhileOpen[i];
+            if (go == null) continue;
+            go.SetActive(!inventoryOpen);
         }
     }
 
@@ -91,5 +105,4 @@ public sealed class InventoryUIController : MonoBehaviour
         });
     }
 }
-
 

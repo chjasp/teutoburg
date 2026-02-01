@@ -81,6 +81,7 @@
     <Compile Include="Assets/Scripts/LootSystem/ItemEnums.cs" />
     <Compile Include="Assets/Scripts/Core/Utilities/Lifetime.cs" />
     <Compile Include="Assets/Scripts/iOSBridge/HKExerciseBridge.cs" />
+    <Compile Include="Assets/Scripts/UI/Inventory/InventoryPanelToggle.cs" />
     <Compile Include="Assets/Scripts/UI/DamageText.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
     <Compile Include="Assets/Scripts/Core/SceneReloadFixer.cs" />
