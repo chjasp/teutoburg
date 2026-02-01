@@ -10,8 +10,6 @@ public class PlayerMelee : MonoBehaviour
 
     [Header("Damage")]
     [SerializeField] private int damage = 25; // fallback/base damage
-    [SerializeField] private bool useEquipmentDamage = true;
-    [SerializeField] private Axiom.Loot.Equipment equipment; // auto-find if null
     [SerializeField] private DamageText damageTextPrefab;
 
     [Header("Animation")]
@@ -25,11 +23,6 @@ public class PlayerMelee : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
-        }
-        if (equipment == null)
-        {
-            equipment = GetComponent<Axiom.Loot.Equipment>();
-            if (equipment == null) equipment = GetComponentInParent<Axiom.Loot.Equipment>();
         }
     }
 
@@ -94,17 +87,8 @@ public class PlayerMelee : MonoBehaviour
         var damageable = target.GetComponentInParent<IDamageable>();
         if (damageable != null)
         {
-            int finalDamage = damage;
-            if (useEquipmentDamage && equipment != null)
-            {
-                equipment.GetWeaponDamageRange(out int minDmg, out int maxDmg);
-                if (maxDmg > 0)
-                {
-                    finalDamage = Random.Range(minDmg, maxDmg + 1);
-                }
-            }
-            damageable.TakeDamage(finalDamage);
-            ShowDamageText(target, finalDamage);
+            damageable.TakeDamage(damage);
+            ShowDamageText(target, damage);
         }
     }
 
@@ -132,5 +116,4 @@ public class PlayerMelee : MonoBehaviour
         dt.Init(amount);
     }
 }
-
 
