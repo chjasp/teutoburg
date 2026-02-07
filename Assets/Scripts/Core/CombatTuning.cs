@@ -21,6 +21,7 @@ namespace Axiom.Core
         // Player health scaling.
         public const int PlayerBaseHealth = 100;
         public const int PlayerBonusHealthAt100Wellness = 100; // 100 Wellness => +100 HP (200 total)
+        public const float PlayerFinalHealthMultiplier = 3f;
 
         // Enemy time-to-kill target for Hard enemies at level 1.
         public const int HardEnemyTargetTtkSeconds = 60;
@@ -64,7 +65,8 @@ namespace Axiom.Core
         {
             float wellness = GetWellness();
             float bonus = PlayerBonusHealthAt100Wellness * (wellness / 100f);
-            return Mathf.Max(1, Mathf.RoundToInt(PlayerBaseHealth + bonus));
+            float scaled = (PlayerBaseHealth + bonus) * PlayerFinalHealthMultiplier;
+            return Mathf.Max(1, Mathf.RoundToInt(scaled));
         }
 
         public static int CalculateStatScaledDamage(float statValue, int baseDamage, float factor)

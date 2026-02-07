@@ -63,6 +63,7 @@
     <Compile Include="Assets/Scripts/Health/EnemyHealth.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerMelee.cs" />
     <Compile Include="Assets/Scripts/Health/HealthBase.cs" />
+    <Compile Include="Assets/Scripts/Core/Interfaces/IStunnable.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
     <Compile Include="Assets/Scripts/Phygital/SacrificeCameraUI.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ZoneOwnership.cs" />

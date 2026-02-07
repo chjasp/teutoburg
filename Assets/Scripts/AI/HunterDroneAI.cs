@@ -3,7 +3,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 [DisallowMultipleComponent]
-public class HunterDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
+public class HunterDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, IStunnable
 {
     [Header("Movement")]
     [SerializeField] private float _moveSpeed = 4f;
@@ -54,6 +54,7 @@ public class HunterDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private int _baseBulletDamage;
     private int _baseRamDamage;
+    private float _stunnedUntil;
 
     void Awake()
     {
@@ -92,6 +93,12 @@ public class HunterDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     void Update()
     {
+        if (IsStunned)
+        {
+            ApplyGravityOnly();
+            return;
+        }
+
         _scanTimer += Time.deltaTime;
         if (_currentTarget == null || _scanTimer >= _rescanInterval)
         {
@@ -340,5 +347,33 @@ public class HunterDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         {
             AcquireTarget();
         }
+    }
+
+    public bool IsStunned => Time.time < _stunnedUntil;
+
+    public void Stun(float seconds)
+    {
+        if (seconds <= 0f) return;
+
+        float until = Time.time + seconds;
+        if (until > _stunnedUntil)
+        {
+            _stunnedUntil = until;
+        }
+
+        StopActiveAttacks();
+    }
+
+    private void StopActiveAttacks()
+    {
+        if (_burstRoutine != null)
+        {
+            StopCoroutine(_burstRoutine);
+            _burstRoutine = null;
+        }
+
+        _isBursting = false;
+        _isRamming = false;
+        _ramHasHit = false;
     }
 }

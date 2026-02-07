@@ -106,13 +106,13 @@ public class EarthBreaker : MonoBehaviour
 					var damageable = col.GetComponentInParent<IDamageable>();
 					if (damageable != null)
 					{
-						damageable.TakeDamage(ringDamage);
-						ShowDamageText(col, ringDamage);
-						var ai = col.GetComponentInParent<EnemyAI>();
-						if (ai != null)
-						{
-							ai.Stun(stunDurationSeconds);
-						}
+                        damageable.TakeDamage(ringDamage);
+                        ShowDamageText(col, ringDamage);
+                        var stunnable = col.GetComponentInParent<IStunnable>();
+                        if (stunnable != null)
+                        {
+                            stunnable.Stun(stunDurationSeconds);
+                        }
 						alreadyHitThisRing.Add(col);
 					}
 				}

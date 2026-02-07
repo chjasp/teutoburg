@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 [RequireComponent(typeof(CharacterController))]
 [DisallowMultipleComponent]
-public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
+public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, IStunnable
 {
     private static readonly List<DisruptorDroneAI> ActiveDrones = new List<DisruptorDroneAI>();
 
@@ -24,6 +25,13 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
     [SerializeField] private float _damageAmpGraceTime = 0.25f;
     [SerializeField] private Transform _beamOrigin;
     [SerializeField] private LayerMask _lineOfSightMask = ~0;
+
+    [Header("Beam Visuals")]
+    [SerializeField] private LineRenderer _beamLineRenderer;
+    [SerializeField, Min(0.01f)] private float _beamWidth = 0.08f;
+    [SerializeField] private Color _beamColor = new Color(0.15f, 0.9f, 1f, 0.85f);
+    [SerializeField] private Material _beamMaterial;
+    [SerializeField] private int _beamSortingOrder = 10;
 
     [Header("Special Attack - EMP Pulse")]
     [SerializeField] private float _empCooldown = 12f;
@@ -53,6 +61,9 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
     private float _recentlyHitUntil;
 
     private int _baseBeamDamagePerSecond;
+    private float _stunnedUntil;
+
+    private static Material _defaultBeamMaterial;
 
     void Awake()
     {
@@ -64,6 +75,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
         _controller = GetComponent<CharacterController>();
         _baseBeamDamagePerSecond = _beamDamagePerSecond;
+        EnsureBeamRenderer();
 
         if (_player == null)
         {
@@ -90,6 +102,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
     void OnDisable()
     {
         ActiveDrones.Remove(this);
+        HideBeamVisual();
     }
 
     void OnDestroy()
@@ -109,6 +122,13 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     void Update()
     {
+        if (IsStunned)
+        {
+            HideBeamVisual();
+            ApplyGravityOnly();
+            return;
+        }
+
         _scanTimer += Time.deltaTime;
         if (_currentTarget == null || _scanTimer >= _rescanInterval)
         {
@@ -118,6 +138,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
         if (_currentTarget == null)
         {
+            HideBeamVisual();
             ApplyGravityOnly();
             return;
         }
@@ -126,6 +147,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         {
             _currentTarget = null;
             _isAggroed = false;
+            HideBeamVisual();
             return;
         }
 
@@ -136,6 +158,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         if (!_isAggroed && distance > _awarenessRange)
         {
             _currentTarget = null;
+            HideBeamVisual();
             return;
         }
 
@@ -206,8 +229,15 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private void UpdateBeamAttack(float distance, bool hasLineOfSight)
     {
-        if (!hasLineOfSight) return;
-        if (distance > _beamRange) return;
+        bool canFireBeam = hasLineOfSight && distance <= _beamRange && _currentTarget != null;
+        if (!canFireBeam)
+        {
+            _beamTickTimer = 0f;
+            HideBeamVisual();
+            return;
+        }
+
+        UpdateBeamVisual(_currentTarget);
 
         _beamTickTimer += Time.deltaTime;
         if (_beamTickTimer < _beamTickInterval) return;
@@ -263,6 +293,91 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
                 status.ApplyMoveSpeedMultiplier(_empSlowMultiplier, _empSlowDuration);
             }
         }
+    }
+
+    private void EnsureBeamRenderer()
+    {
+        if (_beamLineRenderer == null)
+        {
+            Transform existingBeam = transform.Find("DesignatorBeam");
+            if (existingBeam != null)
+            {
+                _beamLineRenderer = existingBeam.GetComponent<LineRenderer>();
+            }
+        }
+
+        if (_beamLineRenderer == null)
+        {
+            GameObject beamObject = new GameObject("DesignatorBeam");
+            beamObject.transform.SetParent(transform, false);
+            _beamLineRenderer = beamObject.AddComponent<LineRenderer>();
+        }
+
+        _beamLineRenderer.useWorldSpace = true;
+        _beamLineRenderer.positionCount = 2;
+        _beamLineRenderer.loop = false;
+        _beamLineRenderer.numCapVertices = 4;
+        _beamLineRenderer.widthMultiplier = 1f;
+        _beamLineRenderer.startWidth = Mathf.Max(0.01f, _beamWidth);
+        _beamLineRenderer.endWidth = Mathf.Max(0.01f, _beamWidth * 0.8f);
+        _beamLineRenderer.startColor = _beamColor;
+        _beamLineRenderer.endColor = new Color(_beamColor.r, _beamColor.g, _beamColor.b, _beamColor.a * 0.2f);
+        _beamLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
+        _beamLineRenderer.receiveShadows = false;
+        _beamLineRenderer.sortingOrder = _beamSortingOrder;
+
+        if (_beamMaterial != null)
+        {
+            _beamLineRenderer.sharedMaterial = _beamMaterial;
+        }
+        else if (_beamLineRenderer.sharedMaterial == null)
+        {
+            _beamLineRenderer.sharedMaterial = GetDefaultBeamMaterial();
+        }
+
+        _beamLineRenderer.enabled = false;
+    }
+
+    private void UpdateBeamVisual(Transform target)
+    {
+        if (_beamLineRenderer == null || target == null) return;
+
+        Vector3 origin = _beamOrigin != null ? _beamOrigin.position : transform.position + Vector3.up * 1.2f;
+        Vector3 targetPos = target.position + Vector3.up * 1f;
+
+        _beamLineRenderer.enabled = true;
+        _beamLineRenderer.SetPosition(0, origin);
+        _beamLineRenderer.SetPosition(1, targetPos);
+    }
+
+    private void HideBeamVisual()
+    {
+        if (_beamLineRenderer != null)
+        {
+            _beamLineRenderer.enabled = false;
+        }
+    }
+
+    private static Material GetDefaultBeamMaterial()
+    {
+        if (_defaultBeamMaterial != null)
+        {
+            return _defaultBeamMaterial;
+        }
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null)
+        {
+            shader = Shader.Find("Unlit/Color");
+        }
+
+        if (shader == null)
+        {
+            shader = Shader.Find("Sprites/Default");
+        }
+
+        _defaultBeamMaterial = new Material(shader);
+        return _defaultBeamMaterial;
     }
 
     private void AcquireTarget()
@@ -324,6 +439,22 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
             _recentlyHitUntil = Time.time + _focusRetreatDuration;
         }
         _lastHealth = current;
+    }
+
+    public bool IsStunned => Time.time < _stunnedUntil;
+
+    public void Stun(float seconds)
+    {
+        if (seconds <= 0f) return;
+
+        float until = Time.time + seconds;
+        if (until > _stunnedUntil)
+        {
+            _stunnedUntil = until;
+        }
+
+        _beamTickTimer = 0f;
+        HideBeamVisual();
     }
 
     public bool IsEmpReady => Time.time >= _empReadyTime;

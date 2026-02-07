@@ -3,7 +3,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 [DisallowMultipleComponent]
-public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
+public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, IStunnable
 {
     [Header("Movement")]
     [SerializeField] private float _moveSpeed = 3.2f;
@@ -50,6 +50,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private float _attackTimer;
     private bool _isBarrageFiring;
+    private Coroutine _barrageRoutine;
     private float _barrageReadyTime;
     private float _nextRandomBarrageCheck;
 
@@ -64,6 +65,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
     private float _nextRepositionTime;
 
     private int _baseMortarDamage;
+    private float _stunnedUntil;
 
     void Awake()
     {
@@ -92,6 +94,12 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     void Update()
     {
+        if (IsStunned)
+        {
+            ApplyGravityOnly();
+            return;
+        }
+
         _scanTimer += Time.deltaTime;
         if (_currentTarget == null || _scanTimer >= _rescanInterval)
         {
@@ -250,7 +258,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         {
             if (isCamping)
             {
-                StartCoroutine(BarrageRoutine());
+                StartBarrage();
                 return;
             }
 
@@ -259,7 +267,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
                 _nextRandomBarrageCheck = Time.time + _barrageRandomCheckInterval;
                 if (Random.value <= _barrageRandomChance)
                 {
-                    StartCoroutine(BarrageRoutine());
+                    StartBarrage();
                     return;
                 }
             }
@@ -291,6 +299,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         }
 
         _isBarrageFiring = false;
+        _barrageRoutine = null;
     }
 
     private void FireMortar(Vector3 targetPos)
@@ -368,5 +377,37 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         {
             AcquireTarget();
         }
+    }
+
+    public bool IsStunned => Time.time < _stunnedUntil;
+
+    public void Stun(float seconds)
+    {
+        if (seconds <= 0f) return;
+
+        float until = Time.time + seconds;
+        if (until > _stunnedUntil)
+        {
+            _stunnedUntil = until;
+        }
+
+        StopActiveAttacks();
+    }
+
+    private void StartBarrage()
+    {
+        if (_barrageRoutine != null || _isBarrageFiring) return;
+        _barrageRoutine = StartCoroutine(BarrageRoutine());
+    }
+
+    private void StopActiveAttacks()
+    {
+        if (_barrageRoutine != null)
+        {
+            StopCoroutine(_barrageRoutine);
+            _barrageRoutine = null;
+        }
+
+        _isBarrageFiring = false;
     }
 }
