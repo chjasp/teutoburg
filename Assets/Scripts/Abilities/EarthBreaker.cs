@@ -31,6 +31,9 @@ public class EarthBreaker : MonoBehaviour
 	[SerializeField] private AoEIndicator ringIndicatorPrefab; // optional; created at runtime if not set
 	[SerializeField] private DamageText damageTextPrefab;      // optional; if assigned, shows damage numbers
 
+    public int DamagePerRing => damagePerRing;
+    public float FocusToDamageFactor => focusToDamageFactor;
+
 	void Awake()
 	{
 		if (origin == null) origin = transform;
@@ -149,4 +152,9 @@ public class EarthBreaker : MonoBehaviour
 		float focus = CombatTuning.GetFocus();
 		return CombatTuning.CalculateStatScaledDamage(focus, damagePerRing, focusToDamageFactor);
 	}
+
+    public int GetPreviewDamagePerRing()
+    {
+        return CalculateDamageFromFocus();
+    }
 }

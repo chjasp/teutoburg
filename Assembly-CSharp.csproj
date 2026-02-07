@@ -54,6 +54,7 @@
     <Compile Include="Assets/Scripts/Core/PlayerStats.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
     <Compile Include="Assets/Scripts/UI/LevelUI.cs" />
+    <Compile Include="Assets/Scripts/UI/CombatFormulaInspectUI.cs" />
     <Compile Include="Assets/Scripts/Abilities/LunarReckoning.cs" />
     <Compile Include="Assets/Scripts/AI/HunterDroneAI.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerActions.cs" />

@@ -9,6 +9,9 @@ namespace Axiom.Core
     /// </summary>
     public class PlayerStats : MonoBehaviour
     {
+        public const float CaloriesForMaxDrive = 2000f;
+        public const float SleepSecondsForMaxFocus = 28800f;
+
         private static PlayerStats _instance;
         private static readonly object _lock = new object();
 
@@ -41,6 +44,8 @@ namespace Axiom.Core
 
         public float CurrentDrive => currentDrive;
         public float CurrentFocus => currentFocus;
+        public float LastCalories => lastCalories;
+        public float LastSleepSeconds => lastSleepSeconds;
         public bool HasData => hasData;
         /// <summary>
         /// Latest formatted stats log line, matching the PlayerStats debug output.
@@ -75,13 +80,8 @@ namespace Axiom.Core
             lastSleepSeconds = sleepSeconds;
             hasData = true;
 
-            // Map 2000 calories to 100 Drive
-            // Formula: (calories / 2000) * 100, clamped to 0-100
-            currentDrive = Mathf.Clamp((calories / 2000f) * 100f, 0f, 100f);
-
-            // Map 8 hours (28800 seconds) to 100 Focus
-            // Formula: (sleepSeconds / 28800) * 100, clamped to 0-100
-            currentFocus = Mathf.Clamp((sleepSeconds / 28800f) * 100f, 0f, 100f);
+            currentDrive = CalculateDrive(calories);
+            currentFocus = CalculateFocus(sleepSeconds);
 
             Debug.Log(LastLogLine);
             OnStatsUpdated?.Invoke();
@@ -101,6 +101,22 @@ namespace Axiom.Core
         public void UpdateSleep(float sleepSeconds)
         {
             UpdateStats(lastCalories, sleepSeconds);
+        }
+
+        /// <summary>
+        /// Converts calories to Drive using the normalized stat mapping.
+        /// </summary>
+        public static float CalculateDrive(float calories)
+        {
+            return Mathf.Clamp((calories / CaloriesForMaxDrive) * 100f, 0f, 100f);
+        }
+
+        /// <summary>
+        /// Converts sleep duration (seconds) to Focus using the normalized stat mapping.
+        /// </summary>
+        public static float CalculateFocus(float sleepSeconds)
+        {
+            return Mathf.Clamp((sleepSeconds / SleepSecondsForMaxFocus) * 100f, 0f, 100f);
         }
     }
 }

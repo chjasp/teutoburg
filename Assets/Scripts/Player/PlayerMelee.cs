@@ -18,6 +18,8 @@ public class PlayerMelee : MonoBehaviour
 
     private Transform lastTarget;
 
+    public int BaseDamage => damage;
+
     void Awake()
     {
         if (animator == null)
@@ -116,4 +118,3 @@ public class PlayerMelee : MonoBehaviour
         dt.Init(amount);
     }
 }
-
