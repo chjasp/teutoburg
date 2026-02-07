@@ -18,13 +18,7 @@ namespace Axiom.Core
         {
             get
             {
-                if (_instance == null)
-                {
-                    var go = new GameObject("LevelManager");
-                    _instance = go.AddComponent<LevelManager>();
-                    DontDestroyOnLoad(go);
-                }
-                return _instance;
+                return PersistentSingletonUtility.EnsureInstance(ref _instance, "LevelManager");
             }
         }
 
@@ -61,16 +55,12 @@ namespace Axiom.Core
 
         private void Awake()
         {
-            if (_instance == null)
+            if (!PersistentSingletonUtility.TryInitialize(this, ref _instance))
             {
-                _instance = this;
-                DontDestroyOnLoad(gameObject);
-                SceneManager.sceneLoaded += OnSceneLoaded;
+                return;
             }
-            else if (_instance != this)
-            {
-                Destroy(gameObject);
-            }
+
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void OnDestroy()
@@ -79,6 +69,8 @@ namespace Axiom.Core
             {
                 SceneManager.sceneLoaded -= OnSceneLoaded;
             }
+
+            PersistentSingletonUtility.ClearIfOwned(this, ref _instance);
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

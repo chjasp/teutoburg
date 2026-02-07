@@ -78,11 +78,9 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
         _controller = GetComponent<CharacterController>();
         _baseMortarDamage = _mortarDamage;
 
-        if (_player == null)
-        {
-            var playerGo = GameObject.FindGameObjectWithTag(_playerTag);
-            if (playerGo != null) _player = playerGo.transform;
-        }
+        _player = EnemyAIShared.ResolvePlayer(_player, _playerTag);
+        _attackTimer = EnemyAIShared.GetDesyncedStartTimer(_mortarInterval);
+        _nextRandomBarrageCheck = Time.time + Random.Range(0.2f, _barrageRandomCheckInterval);
     }
 
     public int BaseAttackDamage => _baseMortarDamage;
@@ -139,19 +137,12 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private void ApplyGravityOnly()
     {
-        _gravityVelocityY += Physics.gravity.y * Time.deltaTime;
-        var flags = _controller.Move(new Vector3(0f, _gravityVelocityY, 0f) * Time.deltaTime);
-        if ((flags & CollisionFlags.Below) != 0 && _gravityVelocityY < 0f)
-        {
-            _gravityVelocityY = -0.5f;
-        }
+        EnemyAIShared.ApplyGravityOnly(_controller, ref _gravityVelocityY);
     }
 
     private void FaceTarget(Vector3 toTarget)
     {
-        if (toTarget.sqrMagnitude <= 0.001f) return;
-        Quaternion face = Quaternion.LookRotation(toTarget.normalized);
-        transform.rotation = Quaternion.Slerp(transform.rotation, face, _turnSpeed * Time.deltaTime);
+        EnemyAIShared.FaceDirection(transform, toTarget, _turnSpeed);
     }
 
     private void UpdateMovement(Vector3 toTarget, float distance)
@@ -200,13 +191,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private void MoveDirection(Vector3 move)
     {
-        _gravityVelocityY += Physics.gravity.y * Time.deltaTime;
-        Vector3 motion = new Vector3(move.x * _moveSpeed, _gravityVelocityY, move.z * _moveSpeed) * Time.deltaTime;
-        var flags = _controller.Move(motion);
-        if ((flags & CollisionFlags.Below) != 0 && _gravityVelocityY < 0f)
-        {
-            _gravityVelocityY = -0.5f;
-        }
+        EnemyAIShared.MoveWithGravity(_controller, move, _moveSpeed, ref _gravityVelocityY);
     }
 
     private void ChooseRepositionTarget(Vector3 toTarget)
@@ -351,11 +336,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private void AcquireTarget()
     {
-        if (_player == null)
-        {
-            var playerGo = GameObject.FindGameObjectWithTag(_playerTag);
-            if (playerGo != null) _player = playerGo.transform;
-        }
+        _player = EnemyAIShared.ResolvePlayer(_player, _playerTag);
 
         if (_player != null && !IsTargetDead(_player))
         {
@@ -365,9 +346,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     private bool IsTargetDead(Transform target)
     {
-        if (target == null) return true;
-        var health = target.GetComponentInParent<PlayerHealth>();
-        return health != null && health.IsDead;
+        return EnemyAIShared.IsDeadPlayerTarget(target);
     }
 
     public void ForceAggro()
@@ -383,13 +362,7 @@ public class SuppressionDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 
     public void Stun(float seconds)
     {
-        if (seconds <= 0f) return;
-
-        float until = Time.time + seconds;
-        if (until > _stunnedUntil)
-        {
-            _stunnedUntil = until;
-        }
+        EnemyAIShared.ExtendTimer(ref _stunnedUntil, seconds);
 
         StopActiveAttacks();
     }

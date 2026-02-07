@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
 public class HealthBarUI : MonoBehaviour
@@ -13,12 +14,6 @@ public class HealthBarUI : MonoBehaviour
 
     private void Awake()
     {
-        // Try to auto-find a PlayerHealth in scene if not assigned
-        if (playerHealth == null)
-        {
-            playerHealth = FindFirstObjectByType<PlayerHealth>();
-        }
-
         if (fillImage == null)
         {
             // Prefer a child Image named with "Fill"; otherwise first child Image that's not on this object
@@ -47,48 +42,35 @@ public class HealthBarUI : MonoBehaviour
 
     private void Start()
     {
-        // Initialize once more in Start to ensure PlayerHealth has finished its Awake initialization
+        ResolveAndBindPlayerHealth();
         InitializeFromCurrentHealth();
     }
 
     private void OnEnable()
     {
-        if (playerHealth != null)
-        {
-            playerHealth.OnHealthChanged += HandleHealthChanged;
-            playerHealth.OnDied += HandleDied;
-            // Initialize UI with current values on enable
-            InitializeFromCurrentHealth();
-        }
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        ResolveAndBindPlayerHealth();
+        InitializeFromCurrentHealth();
     }
 
     private void OnDisable()
     {
-        if (playerHealth != null)
-        {
-            playerHealth.OnHealthChanged -= HandleHealthChanged;
-            playerHealth.OnDied -= HandleDied;
-        }
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        UnbindPlayerHealth();
     }
 
     private void Update()
     {
-        // Re-acquire player reference if lost (handles scene reload)
-        if (playerHealth == null)
-        {
-            playerHealth = FindFirstObjectByType<PlayerHealth>();
-            if (playerHealth != null)
-            {
-                playerHealth.OnHealthChanged += HandleHealthChanged;
-                playerHealth.OnDied += HandleDied;
-                InitializeFromCurrentHealth();
-            }
-        }
-
         if (updateEveryFrameIfNoEvents && playerHealth != null)
         {
             UpdateFill(playerHealth.CurrentHealth, playerHealth.MaxHealth);
         }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        ResolveAndBindPlayerHealth();
+        InitializeFromCurrentHealth();
     }
 
     private void InitializeFromCurrentHealth()
@@ -111,5 +93,32 @@ public class HealthBarUI : MonoBehaviour
     {
         if (fillImage == null || max <= 0) return;
         fillImage.fillAmount = Mathf.Clamp01((float)current / max);
+    }
+
+    private void ResolveAndBindPlayerHealth()
+    {
+        if (playerHealth == null)
+        {
+            playerHealth = FindFirstObjectByType<PlayerHealth>();
+        }
+
+        if (playerHealth != null)
+        {
+            playerHealth.OnHealthChanged -= HandleHealthChanged;
+            playerHealth.OnDied -= HandleDied;
+            playerHealth.OnHealthChanged += HandleHealthChanged;
+            playerHealth.OnDied += HandleDied;
+        }
+    }
+
+    private void UnbindPlayerHealth()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.OnHealthChanged -= HandleHealthChanged;
+        playerHealth.OnDied -= HandleDied;
     }
 }

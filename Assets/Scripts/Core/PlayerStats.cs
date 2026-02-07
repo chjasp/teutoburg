@@ -16,19 +16,15 @@ namespace Axiom.Core
         {
             get
             {
-                if (_instance == null)
+                if (_instance != null)
                 {
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            var go = new GameObject("PlayerStats");
-                            _instance = go.AddComponent<PlayerStats>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
+                    return _instance;
                 }
-                return _instance;
+
+                lock (_lock)
+                {
+                    return PersistentSingletonUtility.EnsureInstance(ref _instance, "PlayerStats");
+                }
             }
         }
 
@@ -60,15 +56,12 @@ namespace Axiom.Core
 
         private void Awake()
         {
-            if (_instance == null)
-            {
-                _instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else if (_instance != this)
-            {
-                Destroy(gameObject);
-            }
+            PersistentSingletonUtility.TryInitialize(this, ref _instance);
+        }
+
+        private void OnDestroy()
+        {
+            PersistentSingletonUtility.ClearIfOwned(this, ref _instance);
         }
 
         /// <summary>

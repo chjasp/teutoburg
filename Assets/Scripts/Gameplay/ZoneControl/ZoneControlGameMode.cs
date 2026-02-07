@@ -43,8 +43,7 @@ public class ZoneControlGameMode : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isMatchEnded;
-    private bool _holdTimerActive;
-    private float _holdTimerRemaining;
+    private ZoneHoldTimerState _holdTimer;
     private GameObject _cachedLegacyEnemiesRoot;
 
     public bool IsMatchEnded => _isMatchEnded;
@@ -90,8 +89,7 @@ public class ZoneControlGameMode : MonoBehaviour
 
         PlayerHealth.DeathHandledExternally = HandleExternalPlayerDeath;
 
-        _holdTimerActive = false;
-        _holdTimerRemaining = _holdAllZonesDuration;
+        _holdTimer = new ZoneHoldTimerState(_holdAllZonesDuration);
 
         _isInitialized = true;
     }
@@ -181,17 +179,7 @@ public class ZoneControlGameMode : MonoBehaviour
 
     private void UpdateCaptureContext()
     {
-        CapturableZone playerZone = null;
-
-        for (int i = 0; i < _zones.Length; i++)
-        {
-            CapturableZone zone = _zones[i];
-            if (zone != null && zone.IsPlayerInside)
-            {
-                playerZone = zone;
-                break;
-            }
-        }
+        CapturableZone playerZone = ZoneControlRuntimeUtils.FindFirstPlayerZone(_zones);
 
         if (playerZone != null)
         {
@@ -206,39 +194,20 @@ public class ZoneControlGameMode : MonoBehaviour
 
     private void UpdateHoldTimer()
     {
-        bool allPlayerOwned = true;
-
-        for (int i = 0; i < _zones.Length; i++)
-        {
-            CapturableZone zone = _zones[i];
-            if (zone == null || zone.Ownership != ZoneOwnership.Player)
-            {
-                allPlayerOwned = false;
-                break;
-            }
-        }
+        bool allPlayerOwned = ZoneControlRuntimeUtils.AreAllZonesPlayerOwned(_zones);
 
         if (!allPlayerOwned)
         {
-            _holdTimerActive = false;
-            _holdTimerRemaining = _holdAllZonesDuration;
-            _zoneHUDController.SetHoldTimer(false, _holdTimerRemaining);
+            _holdTimer.Reset();
+            _zoneHUDController.SetHoldTimer(false, _holdTimer.Remaining);
             return;
         }
 
-        if (!_holdTimerActive)
-        {
-            _holdTimerActive = true;
-            _holdTimerRemaining = _holdAllZonesDuration;
-        }
-        else
-        {
-            _holdTimerRemaining -= Time.deltaTime;
-        }
+        _holdTimer.Tick(Time.deltaTime);
 
-        _zoneHUDController.SetHoldTimer(true, _holdTimerRemaining);
+        _zoneHUDController.SetHoldTimer(true, _holdTimer.Remaining);
 
-        if (_holdTimerRemaining <= 0f)
+        if (_holdTimer.Remaining <= 0f)
         {
             TriggerVictory();
         }
@@ -559,14 +528,10 @@ public class ZoneControlGameMode : MonoBehaviour
     private void BuildZoneLookup()
     {
         _zoneLookup.Clear();
-
-        for (int i = 0; i < _zones.Length; i++)
+        Dictionary<ZoneId, CapturableZone> rebuiltLookup = ZoneControlRuntimeUtils.BuildZoneLookup(_zones);
+        foreach (KeyValuePair<ZoneId, CapturableZone> pair in rebuiltLookup)
         {
-            CapturableZone zone = _zones[i];
-            if (zone != null)
-            {
-                _zoneLookup[zone.Id] = zone;
-            }
+            _zoneLookup[pair.Key] = pair.Value;
         }
     }
 

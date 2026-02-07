@@ -110,27 +110,16 @@ public class CapturableZone : MonoBehaviour
         ZoneCaptureActor? previousActor = _activeCaptureActor;
         float previousProgress = _ownershipProgress;
 
-        _activeCaptureActor = ResolveCaptureActor();
-
-        if (_activeCaptureActor.HasValue)
-        {
-            if (_activeCaptureActor.Value == ZoneCaptureActor.Player)
-            {
-                float rate = 1f / Mathf.Max(0.01f, _playerCaptureDuration);
-                _ownershipProgress = Mathf.Clamp01(_ownershipProgress + Time.deltaTime * rate);
-            }
-            else
-            {
-                float rate = 1f / Mathf.Max(0.01f, _enemyRecaptureDuration);
-                _ownershipProgress = Mathf.Clamp01(_ownershipProgress - Time.deltaTime * rate);
-            }
-        }
-        else
-        {
-            float target = _currentOwnership == ZoneOwnership.Player ? 1f : 0f;
-            float decayRate = 1f / Mathf.Max(0.01f, _progressDecayDuration);
-            _ownershipProgress = Mathf.MoveTowards(_ownershipProgress, target, Time.deltaTime * decayRate);
-        }
+        _activeCaptureActor = ZoneCaptureRuntimeUtils.ResolveCaptureActor(_currentOwnership, _isPlayerInside, _aliveEnemiesInZone);
+        _ownershipProgress = ZoneCaptureRuntimeUtils.TickProgress(
+            _ownershipProgress,
+            _currentOwnership,
+            _activeCaptureActor,
+            _aliveEnemiesInZone,
+            _playerCaptureDuration,
+            _enemyRecaptureDuration,
+            _progressDecayDuration,
+            Time.deltaTime);
 
         ZoneOwnership previousOwnership = _currentOwnership;
         if (_currentOwnership == ZoneOwnership.Enemy && _ownershipProgress >= 1f)
@@ -142,7 +131,7 @@ public class CapturableZone : MonoBehaviour
             SetOwnershipInternal(ZoneOwnership.Enemy, true);
         }
 
-        bool underAttack = _currentOwnership == ZoneOwnership.Player && _activeCaptureActor == ZoneCaptureActor.Enemy;
+        bool underAttack = ZoneCaptureRuntimeUtils.IsUnderAttack(_currentOwnership, _activeCaptureActor);
         if (underAttack != _isUnderAttack)
         {
             _isUnderAttack = underAttack;
@@ -182,26 +171,6 @@ public class CapturableZone : MonoBehaviour
         }
 
         return transform.position;
-    }
-
-    private ZoneCaptureActor? ResolveCaptureActor()
-    {
-        if (_currentOwnership == ZoneOwnership.Enemy)
-        {
-            if (_isPlayerInside && _aliveEnemiesInZone <= 0)
-            {
-                return ZoneCaptureActor.Player;
-            }
-
-            return null;
-        }
-
-        if (!_isPlayerInside && _aliveEnemiesInZone > 0)
-        {
-            return ZoneCaptureActor.Enemy;
-        }
-
-        return null;
     }
 
     private void RefreshPlayerPresence()

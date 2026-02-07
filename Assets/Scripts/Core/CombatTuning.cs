@@ -42,7 +42,12 @@ namespace Axiom.Core
         public const float EasyDamageMultiplier = 0.7f;
         public const float MediumDamageMultiplier = 1.0f;
         public const float HardDamageMultiplier = 1.4f;
-        public const float EnemyDamageMultiplierPerLevel = 1.0f; // keep damage flat across levels by default
+        public const float EnemyDamageMultiplierPerLevel = 1.03f;
+
+        // Zone-control heavy-role adjustments (applied after tier/level scaling).
+        public const float HeavyRoleDamageMultiplier = 1.15f;
+        public const float HeavyRoleHealthMultiplier = 1.12f;
+        public const int HeavyRoleFlatHealthBonus = 120;
 
         public static float GetDrive()
         {
@@ -127,6 +132,20 @@ namespace Axiom.Core
                 default:
                     return HardDamageMultiplier;
             }
+        }
+
+        public static int ApplyHeavyRoleHealthTuning(int scaledMaxHealth)
+        {
+            int clamped = Mathf.Max(1, scaledMaxHealth);
+            float tuned = clamped * HeavyRoleHealthMultiplier + HeavyRoleFlatHealthBonus;
+            return Mathf.Max(1, Mathf.RoundToInt(tuned));
+        }
+
+        public static int ApplyHeavyRoleDamageTuning(int scaledDamage)
+        {
+            int clamped = Mathf.Max(0, scaledDamage);
+            float tuned = clamped * HeavyRoleDamageMultiplier;
+            return Mathf.Max(1, Mathf.RoundToInt(tuned));
         }
 
         private static float GetGlobalEnemyHealthScale(int baseMaxHealth)

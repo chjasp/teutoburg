@@ -66,8 +66,11 @@ public class EnemyHealth : HealthBase
 
     protected override void OnDeathStart()
     {
-        var ai = GetComponent<EnemyAI>();
-        if (ai != null) ai.enabled = false;
+        DisableOnDeath<HunterDroneAI>();
+        DisableOnDeath<SuppressionDroneAI>();
+        DisableOnDeath<DisruptorDroneAI>();
+        DisableOnDeath<ZoneDroneController>();
+
         var controller = GetComponent<CharacterController>();
         if (controller != null) controller.enabled = false;
         
@@ -75,6 +78,15 @@ public class EnemyHealth : HealthBase
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.UnregisterEnemy();
+        }
+    }
+
+    private void DisableOnDeath<T>() where T : Behaviour
+    {
+        T behaviour = GetComponent<T>();
+        if (behaviour != null)
+        {
+            behaviour.enabled = false;
         }
     }
 }

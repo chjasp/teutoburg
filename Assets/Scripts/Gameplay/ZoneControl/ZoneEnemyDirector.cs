@@ -187,14 +187,16 @@ public class ZoneEnemyDirector : MonoBehaviour
         EnemyHealth health = drone.GetComponent<EnemyHealth>();
         if (health != null && !health.IsDead)
         {
-            int newMax = Mathf.Max(1, health.MaxHealth + _heavyBonusHealth);
+            int baseHeavyHealth = Mathf.Max(1, health.MaxHealth + Mathf.Max(0, _heavyBonusHealth));
+            int newMax = CombatTuning.ApplyHeavyRoleHealthTuning(baseHeavyHealth);
             health.SetMaxHealth(newMax, true);
         }
 
         IEnemyAttackTuning attackTuning = drone.GetComponent<IEnemyAttackTuning>();
         if (attackTuning != null)
         {
-            attackTuning.SetAttackDamage(Mathf.RoundToInt(attackTuning.BaseAttackDamage * 1.2f));
+            int heavyDamage = CombatTuning.ApplyHeavyRoleDamageTuning(attackTuning.BaseAttackDamage);
+            attackTuning.SetAttackDamage(heavyDamage);
         }
     }
 

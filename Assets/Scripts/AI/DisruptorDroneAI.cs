@@ -77,11 +77,8 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, 
         _baseBeamDamagePerSecond = _beamDamagePerSecond;
         EnsureBeamRenderer();
 
-        if (_player == null)
-        {
-            var playerGo = GameObject.FindGameObjectWithTag(_playerTag);
-            if (playerGo != null) _player = playerGo.transform;
-        }
+        _player = EnemyAIShared.ResolvePlayer(_player, _playerTag);
+        _empReadyTime = Time.time + Random.Range(0f, _empCooldown * 0.4f);
 
         _health = GetComponent<EnemyHealth>();
         if (_health != null)
@@ -172,19 +169,12 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, 
 
     private void ApplyGravityOnly()
     {
-        _gravityVelocityY += Physics.gravity.y * Time.deltaTime;
-        var flags = _controller.Move(new Vector3(0f, _gravityVelocityY, 0f) * Time.deltaTime);
-        if ((flags & CollisionFlags.Below) != 0 && _gravityVelocityY < 0f)
-        {
-            _gravityVelocityY = -0.5f;
-        }
+        EnemyAIShared.ApplyGravityOnly(_controller, ref _gravityVelocityY);
     }
 
     private void FaceTarget(Vector3 toTarget)
     {
-        if (toTarget.sqrMagnitude <= 0.001f) return;
-        Quaternion face = Quaternion.LookRotation(toTarget.normalized);
-        transform.rotation = Quaternion.Slerp(transform.rotation, face, _turnSpeed * Time.deltaTime);
+        EnemyAIShared.FaceDirection(transform, toTarget, _turnSpeed);
     }
 
     private void UpdateMovement(Vector3 toTarget, float distance, bool hasLineOfSight)
@@ -218,13 +208,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, 
             }
         }
 
-        _gravityVelocityY += Physics.gravity.y * Time.deltaTime;
-        Vector3 motion = new Vector3(move.x * _moveSpeed, _gravityVelocityY, move.z * _moveSpeed) * Time.deltaTime;
-        var flags = _controller.Move(motion);
-        if ((flags & CollisionFlags.Below) != 0 && _gravityVelocityY < 0f)
-        {
-            _gravityVelocityY = -0.5f;
-        }
+        EnemyAIShared.MoveWithGravity(_controller, move, _moveSpeed, ref _gravityVelocityY);
     }
 
     private void UpdateBeamAttack(float distance, bool hasLineOfSight)
@@ -382,11 +366,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, 
 
     private void AcquireTarget()
     {
-        if (_player == null)
-        {
-            var playerGo = GameObject.FindGameObjectWithTag(_playerTag);
-            if (playerGo != null) _player = playerGo.transform;
-        }
+        _player = EnemyAIShared.ResolvePlayer(_player, _playerTag);
 
         if (_player != null && !IsTargetDead(_player))
         {
@@ -396,9 +376,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, 
 
     private bool IsTargetDead(Transform target)
     {
-        if (target == null) return true;
-        var playerHealth = target.GetComponentInParent<PlayerHealth>();
-        return playerHealth != null && playerHealth.IsDead;
+        return EnemyAIShared.IsDeadPlayerTarget(target);
     }
 
     private bool HasLineOfSight(Transform target)
@@ -445,13 +423,7 @@ public class DisruptorDroneAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro, 
 
     public void Stun(float seconds)
     {
-        if (seconds <= 0f) return;
-
-        float until = Time.time + seconds;
-        if (until > _stunnedUntil)
-        {
-            _stunnedUntil = until;
-        }
+        EnemyAIShared.ExtendTimer(ref _stunnedUntil, seconds);
 
         _beamTickTimer = 0f;
         HideBeamVisual();

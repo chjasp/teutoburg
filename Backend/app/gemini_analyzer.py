@@ -5,7 +5,7 @@ Returns a health score from 0.0 (unhealthy) to 1.0 (healthy).
 """
 
 import json
-import re
+import logging
 from typing import Optional
 
 from google import genai
@@ -13,8 +13,9 @@ from google.genai import types
 
 from .config import get_settings
 
+logger = logging.getLogger(__name__)
 
-# System prompt for food health analysis
+
 ANALYSIS_PROMPT = """You are a nutritionist AI that analyzes food images.
 
 Analyze the food shown in this image and rate it on a health scale.
@@ -45,162 +46,146 @@ Remember: Return ONLY the JSON object, no additional text."""
 
 class FoodAnalyzer:
     """Analyzes food images using Google Gemini via Vertex AI."""
-    
+
     def __init__(self):
         settings = get_settings()
-        
-        # Initialize client with Vertex AI mode (uses Application Default Credentials)
-        # No API key needed - billing goes through the GCP project
         self.client = genai.Client(
             vertexai=True,
             project=settings.gcp_project_id,
-            location=settings.gcp_location
+            location=settings.gcp_location,
         )
         self.model_name = settings.gemini_model
-        
-        print(f"[FoodAnalyzer] Initialized with project={settings.gcp_project_id}, "
-              f"location={settings.gcp_location}, model={self.model_name}")
-    
+
+        logger.info(
+            "FoodAnalyzer initialized (project=%s, location=%s, model=%s)",
+            settings.gcp_project_id,
+            settings.gcp_location,
+            self.model_name,
+        )
+
     async def analyze_image(self, image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
-        """
-        Analyze a food image and return a health assessment.
-        
-        Args:
-            image_bytes: Raw image data
-            mime_type: MIME type of the image (image/jpeg or image/png)
-            
-        Returns:
-            dict with keys: score (float), category (str), reasoning (str)
-        """
+        if not image_bytes:
+            return _error_result("No image data received")
+
         try:
-            # Validate input
-            if not image_bytes:
-                print("[FoodAnalyzer] Error: image_bytes is empty or None")
-                return {
-                    "score": 0.5,
-                    "category": "error",
-                    "reasoning": "No image data received"
-                }
-            
-            print(f"[FoodAnalyzer] Processing image: {len(image_bytes)} bytes, mime_type={mime_type}")
-            
-            # Create image part for Gemini using inline_data format
             image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-            
-            # Generate response using the client
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=[ANALYSIS_PROMPT, image_part],
                 config=types.GenerateContentConfig(
-                    temperature=0.1,  # Low temperature for consistent scoring
-                    max_output_tokens=1024,  # Increased to ensure complete response
-                )
+                    temperature=0.1,
+                    max_output_tokens=1024,
+                ),
             )
-            
-            # Debug: print the full response structure
-            print(f"[FoodAnalyzer] Response type: {type(response)}")
-            print(f"[FoodAnalyzer] Response: {response}")
-            
-            # Extract text from response - try multiple access patterns
+
             response_text = self._extract_response_text(response)
-            
             if not response_text:
-                print("[FoodAnalyzer] Error: Could not extract text from response")
-                return {
-                    "score": 0.5,
-                    "category": "error",
-                    "reasoning": "Empty response from Gemini API"
-                }
-            
-            print(f"[FoodAnalyzer] Extracted text: {response_text[:200]}")
-            
-            # Parse the JSON response
+                return _error_result("Empty response from Gemini API")
+
             return self._parse_response(response_text)
-            
-        except Exception as e:
-            # Return a safe fallback on error
-            import traceback
-            print(f"[FoodAnalyzer] Error: {e}")
-            print(f"[FoodAnalyzer] Traceback: {traceback.format_exc()}")
-            return {
-                "score": 0.5,
-                "category": "error",
-                "reasoning": f"Analysis failed: {str(e)}"
-            }
-    
+        except Exception as exc:
+            logger.exception("Food analysis failed")
+            return _error_result(f"Analysis failed: {exc}")
+
     def _extract_response_text(self, response) -> Optional[str]:
-        """Extract text content from the Gemini response object."""
-        # Try the .text property first (convenience accessor)
+        if response is None:
+            return None
+
         try:
-            if hasattr(response, 'text') and response.text:
-                return response.text
-        except Exception as e:
-            print(f"[FoodAnalyzer] response.text failed: {e}")
-        
-        # Try accessing via candidates -> content -> parts -> text
+            text = getattr(response, "text", None)
+            if text:
+                return text
+        except Exception:
+            logger.debug("Failed to read response.text", exc_info=True)
+
         try:
-            if hasattr(response, 'candidates') and response.candidates:
-                candidate = response.candidates[0]
-                if hasattr(candidate, 'content') and candidate.content:
-                    if hasattr(candidate.content, 'parts') and candidate.content.parts:
-                        for part in candidate.content.parts:
-                            if hasattr(part, 'text') and part.text:
-                                return part.text
-        except Exception as e:
-            print(f"[FoodAnalyzer] candidates access failed: {e}")
-        
-        # Try direct parts access
-        try:
-            if hasattr(response, 'parts') and response.parts:
-                for part in response.parts:
-                    if hasattr(part, 'text') and part.text:
-                        return part.text
-        except Exception as e:
-            print(f"[FoodAnalyzer] parts access failed: {e}")
-        
-        # Try string conversion as last resort
-        try:
-            response_str = str(response)
-            if response_str and response_str != 'None':
-                print(f"[FoodAnalyzer] Using string conversion: {response_str[:100]}")
-                return response_str
-        except Exception as e:
-            print(f"[FoodAnalyzer] string conversion failed: {e}")
-        
+            candidates = getattr(response, "candidates", None)
+            if candidates:
+                first_candidate = candidates[0]
+                content = getattr(first_candidate, "content", None)
+                parts = getattr(content, "parts", None) if content is not None else None
+                if parts:
+                    for part in parts:
+                        part_text = getattr(part, "text", None)
+                        if part_text:
+                            return part_text
+        except Exception:
+            logger.debug("Failed to parse candidates content", exc_info=True)
+
         return None
-    
+
     def _parse_response(self, response_text: str) -> dict:
-        """Parse the LLM response into a structured result."""
+        json_payload = _extract_json_payload(response_text)
+        if json_payload is None:
+            return _error_result("Could not parse LLM response", category="parse_error")
+
         try:
-            # Try to extract JSON from the response
-            # Handle cases where the model might wrap it in markdown code blocks
-            json_match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
-            else:
-                result = json.loads(response_text)
-            
-            # Validate and clamp score
-            score = float(result.get("score", 0.5))
-            score = max(0.0, min(1.0, score))  # Clamp to 0-1
-            
-            return {
-                "score": score,
-                "category": str(result.get("category", "unknown")),
-                "reasoning": str(result.get("reasoning", ""))
-            }
-            
-        except (json.JSONDecodeError, ValueError, KeyError) as e:
-            # Fallback if parsing fails
-            print(f"[FoodAnalyzer] JSON parse error: {e}")
-            return {
-                "score": 0.5,
-                "category": "parse_error",
-                "reasoning": f"Could not parse LLM response: {response_text[:100]}"
-            }
+            parsed = json.loads(json_payload)
+        except json.JSONDecodeError:
+            logger.warning("Invalid JSON payload from LLM: %s", response_text[:240])
+            return _error_result("Could not parse LLM response", category="parse_error")
+
+        try:
+            score = float(parsed.get("score", 0.5))
+        except (TypeError, ValueError):
+            score = 0.5
+
+        score = max(0.0, min(1.0, score))
+        category = str(parsed.get("category", "unknown"))
+        reasoning = str(parsed.get("reasoning", ""))
+
+        return {
+            "score": score,
+            "category": category,
+            "reasoning": reasoning,
+        }
 
 
-# Singleton instance
+def _extract_json_payload(raw_text: str) -> Optional[str]:
+    if not raw_text:
+        return None
+
+    text = raw_text.strip()
+
+    # If the model returned markdown code fences, strip them first.
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        if first_newline >= 0:
+            text = text[first_newline + 1 :]
+        fence_end = text.rfind("```")
+        if fence_end >= 0:
+            text = text[:fence_end].strip()
+
+    # Fast path: whole payload is JSON.
+    if text.startswith("{") and text.endswith("}"):
+        return text
+
+    # Fallback: capture first balanced JSON object.
+    start = text.find("{")
+    if start < 0:
+        return None
+
+    depth = 0
+    for idx in range(start, len(text)):
+        ch = text[idx]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : idx + 1]
+
+    return None
+
+
+def _error_result(reasoning: str, category: str = "error") -> dict:
+    return {
+        "score": 0.5,
+        "category": category,
+        "reasoning": reasoning,
+    }
+
+
 _analyzer: Optional[FoodAnalyzer] = None
 
 
