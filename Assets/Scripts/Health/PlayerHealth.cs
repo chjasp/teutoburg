@@ -1,19 +1,37 @@
+using System;
 using UnityEngine;
 using Axiom.Core;
 
 [DisallowMultipleComponent]
 public class PlayerHealth : HealthBase
 {
+    /// <summary>
+    /// Optional external death handler. Return true to suppress default run reset behavior.
+    /// </summary>
+    public static Func<PlayerHealth, bool> DeathHandledExternally;
+
     [Header("Player Health")]
     [SerializeField] private float hitInvulnerability = 0.25f; // short grace period between hits
     [SerializeField] private GameObject hitVfxPrefab;
+    [SerializeField] private PlayerStatusEffects _statusEffects;
 
     private float invulnerableUntil;
 
     protected override void Awake()
     {
         base.Awake();
+        if (_statusEffects == null)
+        {
+            _statusEffects = GetComponent<PlayerStatusEffects>();
+        }
         invulnerableUntil = -999f;
+    }
+
+    public override void TakeDamage(int amount)
+    {
+        float multiplier = _statusEffects != null ? _statusEffects.DamageTakenMultiplier : 1f;
+        int adjusted = Mathf.RoundToInt(amount * multiplier);
+        base.TakeDamage(adjusted);
     }
 
     protected override bool CanTakeDamageNow()
@@ -50,6 +68,11 @@ public class PlayerHealth : HealthBase
 
     protected override void OnDeathFinalize()
     {
+        if (DeathHandledExternally != null && DeathHandledExternally(this))
+        {
+            return;
+        }
+
         GameManager.Instance.ResetRun();
     }
 }

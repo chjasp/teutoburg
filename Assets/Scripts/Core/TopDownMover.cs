@@ -7,6 +7,7 @@ public class TopDownMover : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float rotationLerp = 12f;
     [SerializeField] private Transform cameraTransform;
+    [SerializeField] private PlayerStatusEffects _statusEffects;
 
     private CharacterController controller;
     private Vector2 move;       // from the on-screen stick
@@ -16,6 +17,7 @@ public class TopDownMover : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         if (cameraTransform == null) cameraTransform = Camera.main.transform;
+        if (_statusEffects == null) _statusEffects = GetComponent<PlayerStatusEffects>();
     }
 
     public void OnMove(InputAction.CallbackContext ctx)
@@ -41,7 +43,8 @@ public class TopDownMover : MonoBehaviour
         Vector3 worldMove = camRight * move.x + camFwd * move.y; // XZ
 
         // Apply movement
-        Vector3 horizontal = worldMove * moveSpeed;
+        float speedMultiplier = _statusEffects != null ? _statusEffects.MoveSpeedMultiplier : 1f;
+        Vector3 horizontal = worldMove * (moveSpeed * speedMultiplier);
         velocity.y += Physics.gravity.y * Time.deltaTime; // you supply gravity when using CharacterController.Move
 
         Vector3 delta = (horizontal + new Vector3(0, velocity.y, 0)) * Time.deltaTime;

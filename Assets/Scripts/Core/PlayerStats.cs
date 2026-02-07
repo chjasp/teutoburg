@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Axiom.Core
@@ -45,6 +46,17 @@ namespace Axiom.Core
         public float CurrentDrive => currentDrive;
         public float CurrentFocus => currentFocus;
         public bool HasData => hasData;
+        /// <summary>
+        /// Latest formatted stats log line, matching the PlayerStats debug output.
+        /// </summary>
+        public string LastLogLine => !hasData
+            ? string.Empty
+            : $"[PlayerStats] Updated. Calories: {lastCalories} -> Drive: {currentDrive}. Sleep: {lastSleepSeconds}s -> Focus: {currentFocus}.";
+
+        /// <summary>
+        /// Fired after stats are updated.
+        /// </summary>
+        public event Action OnStatsUpdated;
 
         private void Awake()
         {
@@ -78,7 +90,8 @@ namespace Axiom.Core
             // Formula: (sleepSeconds / 28800) * 100, clamped to 0-100
             currentFocus = Mathf.Clamp((sleepSeconds / 28800f) * 100f, 0f, 100f);
 
-            Debug.Log($"[PlayerStats] Updated. Calories: {calories} -> Drive: {currentDrive}. Sleep: {sleepSeconds}s -> Focus: {currentFocus}.");
+            Debug.Log(LastLogLine);
+            OnStatsUpdated?.Invoke();
         }
 
         /// <summary>

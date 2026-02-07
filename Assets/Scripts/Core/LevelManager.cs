@@ -13,6 +13,7 @@ namespace Axiom.Core
     public class LevelManager : MonoBehaviour
     {
         private static LevelManager _instance;
+        private static bool _suppressLevelProgression;
         public static LevelManager Instance
         {
             get
@@ -25,6 +26,15 @@ namespace Axiom.Core
                 }
                 return _instance;
             }
+        }
+
+        /// <summary>
+        /// When enabled, enemy elimination will not trigger level transitions.
+        /// </summary>
+        public static bool SuppressLevelProgression
+        {
+            get => _suppressLevelProgression;
+            set => _suppressLevelProgression = value;
         }
 
         [Header("Settings")]
@@ -132,6 +142,12 @@ namespace Axiom.Core
         public void UnregisterEnemy()
         {
             _enemyCount--;
+            if (_enemyCount < 0) _enemyCount = 0;
+
+            if (SuppressLevelProgression)
+            {
+                return;
+            }
             
             // Only check for level completion after the level has properly started
             // and we had at least one enemy to begin with

@@ -2,7 +2,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 [DisallowMultipleComponent]
-public class EnemyAI : MonoBehaviour
+public class EnemyAI : MonoBehaviour, IEnemyAttackTuning, IEnemyAggro
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 3.5f;
