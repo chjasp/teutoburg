@@ -37,6 +37,9 @@ public class SwarmStrategist : MonoBehaviour
         "- reasoning must be terse military comms and specific.\n" +
         "- Respond with JSON only; no extra text.";
 
+    [Header("Debug")]
+    [SerializeField] private bool _logRawLlmResponseToConsole = true;
+
     [Header("References")]
     [SerializeField] private ZoneControlGameMode _gameMode;
     [SerializeField] private ZoneEnemyDirector _enemyDirector;
@@ -309,6 +312,10 @@ public class SwarmStrategist : MonoBehaviour
         LastRawLlmResponse = string.IsNullOrWhiteSpace(apiResult.RawDirectiveText)
             ? apiResult.RawResponseJson
             : apiResult.RawDirectiveText;
+        if (_logRawLlmResponseToConsole)
+        {
+            Debug.Log($"[SwarmStrategist] Raw LLM response:\n{LastRawLlmResponse}", this);
+        }
 
         if (!apiResult.Success)
         {

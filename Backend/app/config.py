@@ -41,6 +41,14 @@ class Settings(BaseSettings):
         default="gemini-3-flash",
         validation_alias=AliasChoices("ARETE_SWARM_MODEL", "SACRIFICE_SWARM_MODEL"),
     )
+    swarm_retry_model: str = Field(
+        default="gemini-2.0-flash",
+        validation_alias=AliasChoices("ARETE_SWARM_RETRY_MODEL", "SACRIFICE_SWARM_RETRY_MODEL"),
+    )
+    swarm_retry_count: int = Field(
+        default=1,
+        validation_alias=AliasChoices("ARETE_SWARM_RETRY_COUNT", "SACRIFICE_SWARM_RETRY_COUNT"),
+    )
     swarm_max_tokens: int = Field(
         default=300,
         validation_alias=AliasChoices("ARETE_SWARM_MAX_TOKENS", "SACRIFICE_SWARM_MAX_TOKENS"),

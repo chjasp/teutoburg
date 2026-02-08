@@ -8,12 +8,12 @@ using UnityEngine.Networking;
 [Serializable]
 public sealed class LLMApiClientConfig
 {
-    public string ApiEndpoint = "http://localhost:8080/swarm/strategize";
+    public string ApiEndpoint = "http://127.0.0.1:8080/swarm/strategize";
     public string ApiKeyFilePath = "UserSettings/swarm_api_key.txt";
     public string Model = "gemini-3-flash";
     public int MaxTokens = 300;
     public float Temperature = 0.7f;
-    public float TimeoutSeconds = 5f;
+    public float TimeoutSeconds = 20f;
 }
 
 public sealed class LLMApiResult
@@ -57,6 +57,8 @@ public sealed class LLMApiClient
         _systemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
             ? "You are the Swarm Commander. Return only JSON."
             : systemPrompt.Trim();
+
+        NormalizeRuntimeConfig();
     }
 
     /// <summary>
@@ -110,14 +112,20 @@ public sealed class LLMApiClient
 
             request.timeout = Mathf.Max(1, Mathf.CeilToInt(_config.TimeoutSeconds));
 
+            float startedAt = Time.realtimeSinceStartup;
             yield return request.SendWebRequest();
+            int elapsedMs = Mathf.Max(0, Mathf.RoundToInt((Time.realtimeSinceStartup - startedAt) * 1000f));
 
             result.RawResponseJson = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
 
             if (request.result != UnityWebRequest.Result.Success)
             {
                 result.Success = false;
-                result.ErrorMessage = $"HTTP error: {request.error}";
+                long statusCode = request.responseCode;
+                string timeoutDetails = request.error != null && request.error.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? $" (timeout={Mathf.CeilToInt(_config.TimeoutSeconds)}s, elapsed={elapsedMs}ms)"
+                    : $" (elapsed={elapsedMs}ms)";
+                result.ErrorMessage = $"HTTP error: {request.error}; status={statusCode}; endpoint={_config.ApiEndpoint}{timeoutDetails}";
                 onComplete?.Invoke(result);
                 yield break;
             }
@@ -172,6 +180,23 @@ public sealed class LLMApiClient
 
             result.Success = true;
             onComplete?.Invoke(result);
+        }
+    }
+
+    private void NormalizeRuntimeConfig()
+    {
+        if (!string.IsNullOrWhiteSpace(_config.ApiEndpoint)
+            && _config.ApiEndpoint.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase))
+        {
+            _config.ApiEndpoint = "http://127.0.0.1" + _config.ApiEndpoint.Substring("http://localhost".Length);
+        }
+
+        if (_config.TimeoutSeconds < 10f)
+        {
+            Debug.LogWarning(
+                $"[LLMApiClient] TimeoutSeconds={_config.TimeoutSeconds:0.##} is too low for online strategist calls. " +
+                "Raising runtime timeout to 20s.");
+            _config.TimeoutSeconds = 20f;
         }
     }
 
