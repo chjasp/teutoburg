@@ -83,6 +83,15 @@ public class ZoneEnemyDirector : MonoBehaviour
     }
 
     /// <summary>
+    /// Returns the total count of alive drones currently active in the scene.
+    /// </summary>
+    public int GetAliveDroneCount()
+    {
+        PruneDeadEntries();
+        return _allDrones.Count;
+    }
+
+    /// <summary>
     /// Returns alive drones currently assigned to a zone objective.
     /// </summary>
     public List<ZoneDroneController> GetAliveDronesByActiveZone(ZoneId zoneId)
@@ -105,6 +114,39 @@ public class ZoneEnemyDirector : MonoBehaviour
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Reassigns up to <paramref name="count"/> defenders from one zone objective to another.
+    /// </summary>
+    public int RedistributeDefenders(ZoneId fromZone, ZoneId toZone, int count)
+    {
+        if (fromZone == toZone)
+        {
+            return 0;
+        }
+
+        int requested = Mathf.Max(0, count);
+        if (requested <= 0)
+        {
+            return 0;
+        }
+
+        List<ZoneDroneController> source = GetAliveDronesByActiveZone(fromZone);
+        int moved = 0;
+        for (int i = 0; i < source.Count && moved < requested; i++)
+        {
+            ZoneDroneController drone = source[i];
+            if (drone == null || !drone.IsAlive)
+            {
+                continue;
+            }
+
+            drone.IssueRelocationOrder(toZone);
+            moved++;
+        }
+
+        return moved;
     }
 
     private void SpawnSquad(

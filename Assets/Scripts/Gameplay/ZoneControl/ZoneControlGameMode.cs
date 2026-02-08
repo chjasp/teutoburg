@@ -36,6 +36,8 @@ public class ZoneControlGameMode : MonoBehaviour
     [SerializeField] private ZoneCoverGenerator _coverGenerator;
     [SerializeField] private ZoneEnemyDirector _enemyDirector;
     [SerializeField] private ReinforcementManager _reinforcementManager;
+    [SerializeField] private BattlefieldEventLog _battlefieldEventLog;
+    [SerializeField] private SwarmStrategist _swarmStrategist;
     [SerializeField] private ZoneHUDController _zoneHUDController;
     [SerializeField] private ZoneEndScreenUI _zoneEndScreenUI;
 
@@ -43,10 +45,13 @@ public class ZoneControlGameMode : MonoBehaviour
 
     private bool _isInitialized;
     private bool _isMatchEnded;
+    private float _matchTimeSeconds;
     private ZoneHoldTimerState _holdTimer;
     private GameObject _cachedLegacyEnemiesRoot;
 
     public bool IsMatchEnded => _isMatchEnded;
+    public IReadOnlyList<CapturableZone> Zones => _zones;
+    public float MatchTimeSeconds => _matchTimeSeconds;
 
     private void Awake()
     {
@@ -63,6 +68,12 @@ public class ZoneControlGameMode : MonoBehaviour
         LevelManager.SuppressLevelProgression = true;
 
         EnsureDependencies();
+        if (!ValidateRequiredStrategicReferences())
+        {
+            enabled = false;
+            return;
+        }
+
         EnsureRuntimeZoneLayout();
 
         if (_coverGenerator != null)
@@ -82,6 +93,8 @@ public class ZoneControlGameMode : MonoBehaviour
         }
 
         _reinforcementManager.Initialize(this, _enemyDirector);
+        _battlefieldEventLog.Initialize(this, _reinforcementManager);
+        _swarmStrategist.Initialize(this, _enemyDirector, _reinforcementManager, _battlefieldEventLog);
         _zoneHUDController.Initialize(_zones);
 
         _zoneEndScreenUI.Initialize();
@@ -90,6 +103,7 @@ public class ZoneControlGameMode : MonoBehaviour
         PlayerHealth.DeathHandledExternally = HandleExternalPlayerDeath;
 
         _holdTimer = new ZoneHoldTimerState(_holdAllZonesDuration);
+        _matchTimeSeconds = 0f;
 
         _isInitialized = true;
     }
@@ -123,6 +137,7 @@ public class ZoneControlGameMode : MonoBehaviour
             return;
         }
 
+        _matchTimeSeconds += Time.deltaTime;
         UpdateZoneHUDStates();
         UpdateCaptureContext();
         UpdateHoldTimer();
@@ -337,6 +352,16 @@ public class ZoneControlGameMode : MonoBehaviour
             }
         }
 
+        if (_battlefieldEventLog == null)
+        {
+            _battlefieldEventLog = GetComponent<BattlefieldEventLog>();
+        }
+
+        if (_swarmStrategist == null)
+        {
+            _swarmStrategist = GetComponent<SwarmStrategist>();
+        }
+
         if (_zoneHUDController == null)
         {
             _zoneHUDController = GetComponent<ZoneHUDController>();
@@ -384,6 +409,25 @@ public class ZoneControlGameMode : MonoBehaviour
                 _enemyRoot = existing;
             }
         }
+    }
+
+    private bool ValidateRequiredStrategicReferences()
+    {
+        bool valid = true;
+
+        if (_battlefieldEventLog == null)
+        {
+            Debug.LogError("[ZoneControlGameMode] BattlefieldEventLog must be added and assigned in the scene.", this);
+            valid = false;
+        }
+
+        if (_swarmStrategist == null)
+        {
+            Debug.LogError("[ZoneControlGameMode] SwarmStrategist must be added and assigned in the scene.", this);
+            valid = false;
+        }
+
+        return valid;
     }
 
     private void EnsureRuntimeZoneLayout()

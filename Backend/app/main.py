@@ -6,6 +6,7 @@ FastAPI server that analyzes food images using Gemini Vision.
 import base64
 import binascii
 import logging
+import time
 from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
@@ -53,6 +54,25 @@ class HealthResponse(BaseModel):
 
     status: str
     version: str
+
+
+class SwarmStrategizeRequest(BaseModel):
+    """Request body for swarm strategist LLM calls."""
+
+    system_prompt: str
+    snapshot_json: str
+    model: Optional[str] = None
+    max_tokens: int = 300
+    temperature: float = 0.7
+
+
+class SwarmStrategizeResponse(BaseModel):
+    """Response body for swarm strategist LLM calls."""
+
+    raw_text: str
+    model: str
+    provider: str
+    latency_ms: int
 
 
 def _verify_api_key_header(authorization: Optional[str]) -> None:
@@ -127,6 +147,35 @@ async def analyze_food_upload(
         raise HTTPException(status_code=400, detail="File too large. Maximum 10MB.")
 
     return await _run_analysis(image_bytes, file.content_type)
+
+
+@app.post("/swarm/strategize", response_model=SwarmStrategizeResponse)
+async def strategize_swarm(
+    request: SwarmStrategizeRequest,
+    _auth: None = Depends(require_api_key),
+) -> SwarmStrategizeResponse:
+    analyzer = get_analyzer()
+
+    started_at = time.perf_counter()
+    try:
+        result = await analyzer.strategize_swarm(
+            system_prompt=request.system_prompt,
+            snapshot_json=request.snapshot_json,
+            model_name=request.model,
+            max_tokens=request.max_tokens,
+            temperature=request.temperature,
+        )
+    except Exception as exc:
+        logger.exception("Swarm strategize endpoint failed")
+        raise HTTPException(status_code=502, detail=f"Swarm strategize failed: {exc}") from exc
+
+    latency_ms = int((time.perf_counter() - started_at) * 1000)
+    return SwarmStrategizeResponse(
+        raw_text=result.get("raw_text", ""),
+        model=result.get("model", request.model or get_settings().swarm_model),
+        provider=result.get("provider", "vertex_gemini"),
+        latency_ms=max(0, latency_ms),
+    )
 
 
 if __name__ == "__main__":

@@ -49,7 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/AI/ZoneDroneController.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/ZoneControl/StrategicAI/StrategicDirective.cs" />
     <Compile Include="Assets/Scripts/AI/EnemyAIShared.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/ZoneControl/StrategicAI/BattlefieldEventLog.cs" />
     <Compile Include="Assets/Scripts/Abilities/MeleeEventProxy.cs" />
     <Compile Include="Assets/Scripts/Core/PlayerStats.cs" />
     <Compile Include="Assets/Scripts/Core/CharacterAnimator.cs" />
@@ -63,6 +65,7 @@
     <Compile Include="Assets/Scripts/UI/TerminalHealthLogUI.cs" />
     <Compile Include="Assets/Scripts/Health/EnemyHealth.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerMelee.cs" />
+    <Compile Include="Assets/Scripts/Core/PlayerCombatTelemetry.cs" />
     <Compile Include="Assets/Scripts/Health/HealthBase.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IStunnable.cs" />
     <Compile Include="Assets/Scripts/Core/TopDownMover.cs" />
@@ -75,14 +78,18 @@
     <Compile Include="Assets/Scripts/iOSBridge/HKSleepBridge.cs" />
     <Compile Include="Assets/Scripts/Core/Utilities/PersistentSingletonUtility.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ZoneBoundaryRing.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/ZoneControl/StrategicAI/BattlefieldSnapshot.cs" />
     <Compile Include="Assets/Scripts/AI/DisruptorDroneAI.cs" />
     <Compile Include="Assets/Scripts/UI/HealthBarUI.cs" />
+    <Compile Include="Assets/Scripts/UI/SwarmStrategistDebugOverlay.cs" />
     <Compile Include="Assets/Scripts/Abilities/AoEIndicator.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/ZoneControl/StrategicAI/LLMApiClient.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/CapturableZone.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ReinforcementManager.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ZoneEnemyDirector.cs" />
     <Compile Include="Assets/Scripts/iOSBridge/HKExerciseBridge.cs" />
     <Compile Include="Assets/Scripts/UI/DamageText.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/ZoneControl/StrategicAI/SwarmStrategist.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IHealth.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/AI/DroneRole.cs" />
     <Compile Include="Assets/Scripts/Core/Interfaces/IEnemyAggro.cs" />
@@ -96,9 +103,11 @@
     <Compile Include="Assets/Scripts/Core/Interfaces/IEnemyAttackTuning.cs" />
     <Compile Include="Assets/Scripts/UI/ZoneEndScreenUI.cs" />
     <Compile Include="Assets/Scripts/Core/GameManager.cs" />
+    <Compile Include="Assets/Scripts/UI/InterceptedTransmissionUI.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ZoneCoverGenerator.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ZoneBeaconVisual.cs" />
     <Compile Include="Assets/Scripts/UI/WorldSpaceHealthBarUI.cs" />
+    <Compile Include="Assets/Scripts/Gameplay/ZoneControl/StrategicAI/StrategicDirectiveParser.cs" />
     <Compile Include="Assets/Scripts/Player/PlayerStatusEffects.cs" />
     <Compile Include="Assets/Scripts/Abilities/Projectile.cs" />
     <Compile Include="Assets/Scripts/Gameplay/ZoneControl/ZoneRouteNetwork.cs" />

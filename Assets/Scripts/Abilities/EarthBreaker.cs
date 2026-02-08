@@ -43,6 +43,7 @@ public class EarthBreaker : MonoBehaviour
 	// UI Button-friendly entry point
 	public void CastEarthBreaker()
 	{
+        PlayerCombatTelemetry.ReportRangedAttack();
 		StartCoroutine(EarthBreakerRoutine());
 	}
 

@@ -48,6 +48,8 @@ public class Heartfire : MonoBehaviour
     /// </summary>
     public void Cast()
     {
+        PlayerCombatTelemetry.ReportRangedAttack();
+
         if (animator != null)
         {
             animator.SetTrigger(castTriggerName);

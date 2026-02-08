@@ -49,6 +49,7 @@ class FoodAnalyzer:
 
     def __init__(self):
         settings = get_settings()
+        self.settings = settings
         self.client = genai.Client(
             vertexai=True,
             project=settings.gcp_project_id,
@@ -138,6 +139,46 @@ class FoodAnalyzer:
             "score": score,
             "category": category,
             "reasoning": reasoning,
+        }
+
+    async def strategize_swarm(
+        self,
+        system_prompt: str,
+        snapshot_json: str,
+        model_name: Optional[str] = None,
+        max_tokens: int = 300,
+        temperature: float = 0.7,
+    ) -> dict:
+        selected_model = model_name or self.settings.swarm_model or self.model_name
+
+        user_prompt = (
+            "Battlefield snapshot (JSON):\n"
+            f"{snapshot_json}\n\n"
+            "Return exactly one JSON directive object and no additional text."
+        )
+
+        try:
+            response = self.client.models.generate_content(
+                model=selected_model,
+                contents=[system_prompt, user_prompt],
+                config=types.GenerateContentConfig(
+                    temperature=max(0.0, min(2.0, float(temperature))),
+                    max_output_tokens=max(32, int(max_tokens)),
+                    response_mime_type="application/json",
+                ),
+            )
+        except Exception as exc:
+            logger.exception("Swarm strategize call failed")
+            raise RuntimeError(f"Strategize call failed: {exc}") from exc
+
+        raw_text = self._extract_response_text(response)
+        if not raw_text:
+            raise RuntimeError("Swarm strategize call returned empty text")
+
+        return {
+            "raw_text": raw_text.strip(),
+            "model": selected_model,
+            "provider": "vertex_gemini",
         }
 
 

@@ -253,6 +253,9 @@ public class LunarReckoning : MonoBehaviour
 			Debug.LogWarning("[LunarReckoning] moonfallPrefab is not assigned!");
 			return;
 		}
+
+        PlayerCombatTelemetry.ReportRangedAttack();
+
 		var moonfall = Instantiate(moonfallPrefab);
 		moonfall.SetOwner(transform);
 		moonfall.InitAtTarget(groundPoint, CalculateDamageFromFocus());
