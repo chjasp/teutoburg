@@ -15,6 +15,13 @@ public class ZoneCoverGenerator : MonoBehaviour
     [SerializeField] private int _coverPerLane = 4;
     [SerializeField] private float _zoneSpreadRadius = 7.5f;
 
+    [Header("Lane Cleanup")]
+    [SerializeField] private Vector2 _laneOffsetRange = new Vector2(1.4f, 3.1f);
+    [SerializeField, Range(0f, 1f)] private float _alphaBravoLaneDensity = 0.35f;
+    [SerializeField] private float _alphaBravoLaneCenterClearance = 3.8f;
+    [SerializeField] private float _alphaBravoZoneClearance = 2.4f;
+    [SerializeField] private int _placementAttemptsPerCover = 6;
+
     [Header("Style")]
     [SerializeField] private Vector2 _coverWidthRange = new Vector2(1.2f, 2.8f);
     [SerializeField] private Vector2 _coverHeightRange = new Vector2(1.2f, 3.4f);
@@ -57,12 +64,27 @@ public class ZoneCoverGenerator : MonoBehaviour
     private void GenerateZoneCover(ZoneId zoneId)
     {
         Vector3 center = _routeNetwork.GetZoneCenter(zoneId);
+        bool preserveAlphaBravoCorridor = zoneId == ZoneId.Alpha || zoneId == ZoneId.Bravo;
+        Vector3 alphaCenter = preserveAlphaBravoCorridor ? _routeNetwork.GetZoneCenter(ZoneId.Alpha) : Vector3.zero;
+        Vector3 bravoCenter = preserveAlphaBravoCorridor ? _routeNetwork.GetZoneCenter(ZoneId.Bravo) : Vector3.zero;
+        int attempts = Mathf.Max(1, _placementAttemptsPerCover);
 
         for (int i = 0; i < _coverPerZone; i++)
         {
-            Vector2 planar = Random.insideUnitCircle * _zoneSpreadRadius;
-            Vector3 pos = new Vector3(center.x + planar.x, center.y, center.z + planar.y);
-            SpawnCoverPrimitive(pos);
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                Vector2 planar = Random.insideUnitCircle * _zoneSpreadRadius;
+                Vector3 pos = new Vector3(center.x + planar.x, center.y, center.z + planar.y);
+
+                if (preserveAlphaBravoCorridor &&
+                    IsNearSegmentXZ(pos, alphaCenter, bravoCenter, _alphaBravoZoneClearance))
+                {
+                    continue;
+                }
+
+                SpawnCoverPrimitive(pos);
+                break;
+            }
         }
     }
 
@@ -74,7 +96,25 @@ public class ZoneCoverGenerator : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < _coverPerLane; i++)
+        bool isAlphaBravoLane = IsAlphaBravoLane(from, to);
+        int coverCount = _coverPerLane;
+        if (isAlphaBravoLane && _coverPerLane > 0)
+        {
+            coverCount = Mathf.Max(1, Mathf.RoundToInt(_coverPerLane * Mathf.Clamp01(_alphaBravoLaneDensity)));
+        }
+
+        float minOffset = Mathf.Min(_laneOffsetRange.x, _laneOffsetRange.y);
+        float maxOffset = Mathf.Max(_laneOffsetRange.x, _laneOffsetRange.y);
+        minOffset = Mathf.Max(0.1f, minOffset);
+        maxOffset = Mathf.Max(minOffset + 0.01f, maxOffset);
+
+        if (isAlphaBravoLane)
+        {
+            minOffset = Mathf.Max(minOffset, _alphaBravoLaneCenterClearance);
+            maxOffset = Mathf.Max(maxOffset, minOffset + 1.2f);
+        }
+
+        for (int i = 0; i < coverCount; i++)
         {
             int segment = Random.Range(0, points.Count - 1);
             Vector3 a = points[segment];
@@ -94,9 +134,35 @@ public class ZoneCoverGenerator : MonoBehaviour
             Vector3 normal = new Vector3(-tangent.z, 0f, tangent.x);
             float side = Random.value < 0.5f ? -1f : 1f;
 
-            Vector3 offset = normal * Random.Range(1.4f, 3.1f) * side;
+            Vector3 offset = normal * Random.Range(minOffset, maxOffset) * side;
             SpawnCoverPrimitive(p + offset);
         }
+    }
+
+    private static bool IsAlphaBravoLane(ZoneId from, ZoneId to)
+    {
+        bool forward = from == ZoneId.Alpha && to == ZoneId.Bravo;
+        bool reverse = from == ZoneId.Bravo && to == ZoneId.Alpha;
+        return forward || reverse;
+    }
+
+    private static bool IsNearSegmentXZ(Vector3 point, Vector3 a, Vector3 b, float radius)
+    {
+        float radiusSqr = radius * radius;
+        Vector2 p = new Vector2(point.x, point.z);
+        Vector2 start = new Vector2(a.x, a.z);
+        Vector2 end = new Vector2(b.x, b.z);
+        Vector2 segment = end - start;
+
+        float segmentSqr = segment.sqrMagnitude;
+        if (segmentSqr <= 0.0001f)
+        {
+            return (p - start).sqrMagnitude <= radiusSqr;
+        }
+
+        float t = Mathf.Clamp01(Vector2.Dot(p - start, segment) / segmentSqr);
+        Vector2 nearest = start + segment * t;
+        return (p - nearest).sqrMagnitude <= radiusSqr;
     }
 
     private void SpawnCoverPrimitive(Vector3 position)
