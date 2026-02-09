@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Axiom.Core
@@ -8,6 +9,9 @@ namespace Axiom.Core
     /// </summary>
     public class PlayerStats : MonoBehaviour
     {
+        public const float CaloriesForMaxDrive = 2000f;
+        public const float SleepSecondsForMaxFocus = 28800f;
+
         private static PlayerStats _instance;
         private static readonly object _lock = new object();
 
@@ -15,19 +19,15 @@ namespace Axiom.Core
         {
             get
             {
-                if (_instance == null)
+                if (_instance != null)
                 {
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            var go = new GameObject("PlayerStats");
-                            _instance = go.AddComponent<PlayerStats>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
+                    return _instance;
                 }
-                return _instance;
+
+                lock (_lock)
+                {
+                    return PersistentSingletonUtility.EnsureInstance(ref _instance, "PlayerStats");
+                }
             }
         }
 
@@ -44,19 +44,29 @@ namespace Axiom.Core
 
         public float CurrentDrive => currentDrive;
         public float CurrentFocus => currentFocus;
+        public float LastCalories => lastCalories;
+        public float LastSleepSeconds => lastSleepSeconds;
         public bool HasData => hasData;
+        /// <summary>
+        /// Latest formatted stats log line, matching the PlayerStats debug output.
+        /// </summary>
+        public string LastLogLine => !hasData
+            ? string.Empty
+            : $"[PlayerStats] Updated. Calories: {lastCalories} -> Drive: {currentDrive}. Sleep: {lastSleepSeconds}s -> Focus: {currentFocus}.";
+
+        /// <summary>
+        /// Fired after stats are updated.
+        /// </summary>
+        public event Action OnStatsUpdated;
 
         private void Awake()
         {
-            if (_instance == null)
-            {
-                _instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else if (_instance != this)
-            {
-                Destroy(gameObject);
-            }
+            PersistentSingletonUtility.TryInitialize(this, ref _instance);
+        }
+
+        private void OnDestroy()
+        {
+            PersistentSingletonUtility.ClearIfOwned(this, ref _instance);
         }
 
         /// <summary>
@@ -70,15 +80,11 @@ namespace Axiom.Core
             lastSleepSeconds = sleepSeconds;
             hasData = true;
 
-            // Map 2000 calories to 100 Drive
-            // Formula: (calories / 2000) * 100, clamped to 0-100
-            currentDrive = Mathf.Clamp((calories / 2000f) * 100f, 0f, 100f);
+            currentDrive = CalculateDrive(calories);
+            currentFocus = CalculateFocus(sleepSeconds);
 
-            // Map 8 hours (28800 seconds) to 100 Focus
-            // Formula: (sleepSeconds / 28800) * 100, clamped to 0-100
-            currentFocus = Mathf.Clamp((sleepSeconds / 28800f) * 100f, 0f, 100f);
-
-            Debug.Log($"[PlayerStats] Updated. Calories: {calories} -> Drive: {currentDrive}. Sleep: {sleepSeconds}s -> Focus: {currentFocus}.");
+            Debug.Log(LastLogLine);
+            OnStatsUpdated?.Invoke();
         }
 
         /// <summary>
@@ -95,6 +101,22 @@ namespace Axiom.Core
         public void UpdateSleep(float sleepSeconds)
         {
             UpdateStats(lastCalories, sleepSeconds);
+        }
+
+        /// <summary>
+        /// Converts calories to Drive using the normalized stat mapping.
+        /// </summary>
+        public static float CalculateDrive(float calories)
+        {
+            return Mathf.Clamp((calories / CaloriesForMaxDrive) * 100f, 0f, 100f);
+        }
+
+        /// <summary>
+        /// Converts sleep duration (seconds) to Focus using the normalized stat mapping.
+        /// </summary>
+        public static float CalculateFocus(float sleepSeconds)
+        {
+            return Mathf.Clamp((sleepSeconds / SleepSecondsForMaxFocus) * 100f, 0f, 100f);
         }
     }
 }

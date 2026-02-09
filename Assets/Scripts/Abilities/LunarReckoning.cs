@@ -24,6 +24,9 @@ public class LunarReckoning : MonoBehaviour
 	[SerializeField] private int baseDamage = 0;
 	[SerializeField] private float focusToDamageFactor = 1f; // 100 Focus (8h sleep) => 100 damage
 
+    public int BaseDamage => baseDamage;
+    public float FocusToDamageFactor => focusToDamageFactor;
+
 	// Targeting state
 	private bool awaitingGroundSelection;
 	private int targetingFrameCount; // skip first frame to avoid button position
@@ -250,6 +253,9 @@ public class LunarReckoning : MonoBehaviour
 			Debug.LogWarning("[LunarReckoning] moonfallPrefab is not assigned!");
 			return;
 		}
+
+        PlayerCombatTelemetry.ReportRangedAttack();
+
 		var moonfall = Instantiate(moonfallPrefab);
 		moonfall.SetOwner(transform);
 		moonfall.InitAtTarget(groundPoint, CalculateDamageFromFocus());
@@ -265,6 +271,11 @@ public class LunarReckoning : MonoBehaviour
 		float focus = CombatTuning.GetFocus();
 		return CombatTuning.CalculateStatScaledDamage(focus, baseDamage, focusToDamageFactor);
 	}
+
+    public int GetPreviewDamage()
+    {
+        return CalculateDamageFromFocus();
+    }
 
 	private static float ConvertToFloat(object value)
 	{

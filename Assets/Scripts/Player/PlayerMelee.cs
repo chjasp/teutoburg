@@ -1,4 +1,5 @@
 using UnityEngine;
+using Axiom.Core;
 
 [DisallowMultipleComponent]
 public class PlayerMelee : MonoBehaviour
@@ -18,6 +19,8 @@ public class PlayerMelee : MonoBehaviour
 
     private Transform lastTarget;
 
+    public int BaseDamage => damage;
+
     void Awake()
     {
         if (animator == null)
@@ -28,6 +31,8 @@ public class PlayerMelee : MonoBehaviour
 
     public void TriggerMelee()
     {
+        PlayerCombatTelemetry.ReportMeleeAttack();
+
         // pick a target now to reduce pop during windup; still re-check at strike
         lastTarget = FindBestTarget();
         if (animator != null && !string.IsNullOrEmpty(meleeTriggerName))
@@ -116,4 +121,3 @@ public class PlayerMelee : MonoBehaviour
         dt.Init(amount);
     }
 }
-

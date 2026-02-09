@@ -32,6 +32,9 @@ public class Heartfire : MonoBehaviour
     [SerializeField] private float aimAssistAngle = 45f;
     [SerializeField] private string enemyTag = "Enemy";
 
+    public int BaseDamage => baseDamage;
+    public float DriveToDamageFactor => driveToDamageFactor;
+
     void Awake()
     {
         if (animator == null)
@@ -45,6 +48,8 @@ public class Heartfire : MonoBehaviour
     /// </summary>
     public void Cast()
     {
+        PlayerCombatTelemetry.ReportRangedAttack();
+
         if (animator != null)
         {
             animator.SetTrigger(castTriggerName);
@@ -157,5 +162,10 @@ public class Heartfire : MonoBehaviour
     {
         float drive = CombatTuning.GetDrive();
         return CombatTuning.CalculateStatScaledDamage(drive, baseDamage, driveToDamageFactor);
+    }
+
+    public int GetPreviewDamage()
+    {
+        return CalculateDamageFromDrive();
     }
 }

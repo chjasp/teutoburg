@@ -4,7 +4,7 @@
 
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -16,6 +16,12 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+}
+
+locals {
+  service_name  = "sacrifice-api"
+  repository_id = "sacrifice-api"
+  api_image     = "${var.region}-docker.pkg.dev/${var.project_id}/${local.repository_id}/api:latest"
 }
 
 # Enable required APIs
@@ -42,21 +48,21 @@ resource "google_project_service" "aiplatform" {
 # Artifact Registry for Docker images
 resource "google_artifact_registry_repository" "api" {
   location      = var.region
-  repository_id = "sacrifice-api"
+  repository_id = local.repository_id
   description   = "Docker repository for Sacrifice Food Analysis API"
   format        = "DOCKER"
-  
+
   depends_on = [google_project_service.artifactregistry]
 }
 
 # Secret Manager for API authentication key (Unity -> API)
 resource "google_secret_manager_secret" "api_key" {
   secret_id = "sacrifice-api-key"
-  
+
   replication {
     auto {}
   }
-  
+
   depends_on = [google_project_service.secretmanager]
 }
 
@@ -85,37 +91,37 @@ resource "google_secret_manager_secret_iam_member" "api_key_access" {
 
 # Cloud Run service
 resource "google_cloud_run_v2_service" "api" {
-  name     = "sacrifice-api"
+  name     = local.service_name
   location = var.region
-  
+
   template {
     service_account = google_service_account.api.email
-    
+
     containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/sacrifice-api/api:latest"
-      
+      image = local.api_image
+
       ports {
         container_port = 8080
       }
-      
+
       resources {
         limits = {
           cpu    = "1"
           memory = "512Mi"
         }
       }
-      
+
       # GCP Project for Vertex AI billing
       env {
         name  = "SACRIFICE_GCP_PROJECT_ID"
         value = var.project_id
       }
-      
+
       env {
         name  = "SACRIFICE_GCP_LOCATION"
         value = var.vertex_ai_location
       }
-      
+
       # API key for Unity authentication (from Secret Manager)
       env {
         name = "SACRIFICE_API_KEY"
@@ -127,13 +133,13 @@ resource "google_cloud_run_v2_service" "api" {
         }
       }
     }
-    
+
     scaling {
       min_instance_count = 0
       max_instance_count = 10
     }
   }
-  
+
   depends_on = [
     google_project_service.run,
     google_project_service.aiplatform,

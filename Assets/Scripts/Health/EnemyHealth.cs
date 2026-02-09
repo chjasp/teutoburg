@@ -36,11 +36,11 @@ public class EnemyHealth : HealthBase
         int finalHealth = CombatTuning.GetEnemyMaxHealth(tier, baseMaxHealth, levelHealthMultiplier);
         SetMaxHealth(finalHealth, true);
 
-        var ai = GetComponent<EnemyAI>();
-        if (ai != null)
+        var attackTuning = GetComponent<IEnemyAttackTuning>();
+        if (attackTuning != null)
         {
-            int finalDamage = CombatTuning.GetEnemyAttackDamage(tier, ai.BaseAttackDamage, level);
-            ai.SetAttackDamage(finalDamage);
+            int finalDamage = CombatTuning.GetEnemyAttackDamage(tier, attackTuning.BaseAttackDamage, level);
+            attackTuning.SetAttackDamage(finalDamage);
         }
     }
 
@@ -57,17 +57,20 @@ public class EnemyHealth : HealthBase
     {
         base.OnAfterDamageTaken(damageAmount);
         // Getting hit should aggro the enemy
-        var ai = GetComponent<EnemyAI>();
-        if (ai != null)
+        var aggro = GetComponent<IEnemyAggro>();
+        if (aggro != null)
         {
-            ai.ForceAggro();
+            aggro.ForceAggro();
         }
     }
 
     protected override void OnDeathStart()
     {
-        var ai = GetComponent<EnemyAI>();
-        if (ai != null) ai.enabled = false;
+        DisableOnDeath<HunterDroneAI>();
+        DisableOnDeath<SuppressionDroneAI>();
+        DisableOnDeath<DisruptorDroneAI>();
+        DisableOnDeath<ZoneDroneController>();
+
         var controller = GetComponent<CharacterController>();
         if (controller != null) controller.enabled = false;
         
@@ -75,6 +78,15 @@ public class EnemyHealth : HealthBase
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.UnregisterEnemy();
+        }
+    }
+
+    private void DisableOnDeath<T>() where T : Behaviour
+    {
+        T behaviour = GetComponent<T>();
+        if (behaviour != null)
+        {
+            behaviour.enabled = false;
         }
     }
 }

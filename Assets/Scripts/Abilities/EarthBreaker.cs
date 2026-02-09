@@ -31,6 +31,9 @@ public class EarthBreaker : MonoBehaviour
 	[SerializeField] private AoEIndicator ringIndicatorPrefab; // optional; created at runtime if not set
 	[SerializeField] private DamageText damageTextPrefab;      // optional; if assigned, shows damage numbers
 
+    public int DamagePerRing => damagePerRing;
+    public float FocusToDamageFactor => focusToDamageFactor;
+
 	void Awake()
 	{
 		if (origin == null) origin = transform;
@@ -40,6 +43,7 @@ public class EarthBreaker : MonoBehaviour
 	// UI Button-friendly entry point
 	public void CastEarthBreaker()
 	{
+        PlayerCombatTelemetry.ReportRangedAttack();
 		StartCoroutine(EarthBreakerRoutine());
 	}
 
@@ -106,13 +110,13 @@ public class EarthBreaker : MonoBehaviour
 					var damageable = col.GetComponentInParent<IDamageable>();
 					if (damageable != null)
 					{
-						damageable.TakeDamage(ringDamage);
-						ShowDamageText(col, ringDamage);
-						var ai = col.GetComponentInParent<EnemyAI>();
-						if (ai != null)
-						{
-							ai.Stun(stunDurationSeconds);
-						}
+                        damageable.TakeDamage(ringDamage);
+                        ShowDamageText(col, ringDamage);
+                        var stunnable = col.GetComponentInParent<IStunnable>();
+                        if (stunnable != null)
+                        {
+                            stunnable.Stun(stunDurationSeconds);
+                        }
 						alreadyHitThisRing.Add(col);
 					}
 				}
@@ -149,4 +153,9 @@ public class EarthBreaker : MonoBehaviour
 		float focus = CombatTuning.GetFocus();
 		return CombatTuning.CalculateStatScaledDamage(focus, damagePerRing, focusToDamageFactor);
 	}
+
+    public int GetPreviewDamagePerRing()
+    {
+        return CalculateDamageFromFocus();
+    }
 }
